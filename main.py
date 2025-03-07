@@ -6,7 +6,9 @@ import argparse
 import logging
 import json
 import sys
+import re
 from pathlib import Path
+from urllib.parse import urlparse
 
 from document_it.analysis import analyze_document_with_workflow, synthesize_topics
 from document_it.parser import extract_urls_from_markdown, categorize_documents
@@ -35,9 +37,18 @@ def setup_arg_parser():
         help="URL of the llms.txt file (default: https://docs.agno.com/llms.txt)"
     )
     parser.add_argument(
+        "--root-page",
+        help="URL of the product's root/landing page (for global context extraction)"
+    )
+    parser.add_argument(
         "--output-dir",
         default="data/output",
         help="Directory to store output files (default: data/output)"
+    )
+    parser.add_argument(
+        "--context-dir",
+        default="data/context",
+        help="Directory to store global context data (default: data/context)"
     )
     parser.add_argument(
         "--max-workers",
@@ -63,6 +74,31 @@ def setup_arg_parser():
     return parser
 
 
+def get_root_page_url(document_url: str) -> str:
+    """Extract root page URL from a document URL."""
+    parsed_url = urlparse(document_url)
+    return f"{parsed_url.scheme}://{parsed_url.netloc}"
+
+
+def extract_text_from_html(html_content: bytes) -> str:
+    """Extract text content from HTML."""
+    try:
+        # Try to import BeautifulSoup
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(html_content, 'html.parser')
+        # Get text content and remove excessive whitespace
+        text_content = re.sub(r'\s+', ' ', soup.get_text()).strip()
+        return text_content
+    except ImportError:
+        # Fallback if BeautifulSoup is not available
+        logger.warning("BeautifulSoup not available, using basic HTML text extraction")
+        # Basic HTML tag removal (not as good as BeautifulSoup)
+        text = html_content.decode('utf-8', errors='ignore')
+        text = re.sub(r'<[^>]+>', ' ', text)
+        text = re.sub(r'\s+', ' ', text).strip()
+        return text
+
+
 def main():
     """Main entry point for the application."""
     parser = setup_arg_parser()
@@ -83,6 +119,38 @@ def main():
         # 1. Connect to website and download llms.txt
         logger.info("Connecting to website...")
         session = connect_to_website(args.url)
+        
+        # Initialize global context if root page is provided
+        try:
+            from document_it.context.context_manager import ContextManager
+            context_manager = ContextManager(args.context_dir)
+            
+            # Get root page for global context
+            root_page_url = args.root_page
+            if not root_page_url:
+                # Try to infer root page from the URL
+                root_page_url = get_root_page_url(args.url)
+                logger.info(f"No root page specified, attempting to use {root_page_url}")
+            
+            logger.info(f"Downloading root page from {root_page_url} for global context...")
+            try:
+                root_filename, root_content = download_file(root_page_url, session=session)
+                
+                # Extract text content
+                if root_filename.endswith((".html", ".htm")):
+                    text_content = extract_text_from_html(root_content)
+                else:
+                    # Use the content directly if not HTML
+                    text_content = root_content.decode('utf-8', errors='ignore')
+                
+                # Initialize global context
+                context_manager.initialize_from_root_page(text_content)
+                logger.info("Initialized global context from root page")
+            except Exception as e:
+                logger.warning(f"Failed to initialize global context from root page: {str(e)}")
+                logger.info("Proceeding without global context")
+        except ImportError:
+            logger.warning("Context management module not available, proceeding without global context")
         
         logger.info("Downloading llms.txt...")
         raw_dir = Path("data/raw")
@@ -166,14 +234,22 @@ def main():
             
             logger.info(f"Generated {len(generated_files)} guideline files")
             logger.info(f"Guidelines available at: {Path('data/output/guidelines').absolute()}")
+            
+            # Export global context summary if available
+            try:
+                context_summary = context_manager.export_context_summary()
+                context_summary_path = Path("data/output/global_context_summary.md")
+                with open(context_summary_path, "w") as f:
+                    f.write(context_summary)
+                logger.info(f"Exported global context summary to {context_summary_path}")
+            except Exception as e:
+                logger.warning(f"Failed to export global context summary: {str(e)}")
         
     except Exception as e:
         logger.error(f"Error: {str(e)}")
         return 1
     
-    # 4. Analyze documents with LangGraph
-    # 5. Generate implementation guidelines
-    logger.info("Document-it first step completed successfully")
+    logger.info("Document-it completed successfully")
 
 
 if __name__ == "__main__":

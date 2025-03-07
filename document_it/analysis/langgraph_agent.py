@@ -2,12 +2,13 @@
 LangGraph Agent module for Document-it.
 
 This module implements the LangGraph agent workflow for analyzing documents
-using OpenAI's GPT-4o model.
+using OpenAI's GPT-4o model, with awareness of global product context.
 """
 
 import json
 import logging
 import os
+import re
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple, TypedDict, Annotated
 
@@ -24,6 +25,9 @@ from document_it.analysis.prompts import (
     TOPIC_SYNTHESIS_PROMPT,
     RELATIONSHIP_MAPPING_PROMPT,
     SUMMARIZATION_PROMPT,
+    CONTEXT_AWARE_DOCUMENT_ANALYSIS_PROMPT,
+    CONTEXT_AWARE_CONCEPT_EXTRACTION_PROMPT,
+    CONTEXT_AWARE_IMPLEMENTATION_PATTERN_PROMPT,
 )
 
 # Load environment variables
@@ -67,6 +71,7 @@ class WorkflowState(TypedDict):
     document_path: str
     document_url: str
     document_content: str
+    global_context: Optional[Dict[str, Any]]  # Added global context
     analysis: Optional[DocumentAnalysis]
     concepts: Optional[List[Dict[str, Any]]]
     implementation_details: Optional[List[Dict[str, Any]]]
@@ -103,13 +108,15 @@ def setup_langgraph_workflow() -> Any:
         workflow.add_node("analyze_document", analyze_document)
         workflow.add_node("extract_concepts", extract_concepts)
         workflow.add_node("extract_implementation_details", extract_implementation_details)
+        workflow.add_node("update_global_context", update_global_context)  # New node
         
         # Define the edges
         workflow.set_entry_point("read_document")
         workflow.add_edge("read_document", "analyze_document")
         workflow.add_edge("analyze_document", "extract_concepts")
         workflow.add_edge("extract_concepts", "extract_implementation_details")
-        workflow.add_edge("extract_implementation_details", END)
+        workflow.add_edge("extract_implementation_details", "update_global_context")  # New edge
+        workflow.add_edge("update_global_context", END)
         
         # Compile the workflow
         compiled_workflow = workflow.compile()
@@ -156,7 +163,7 @@ def read_document(state: WorkflowState) -> WorkflowState:
 
 def analyze_document(state: WorkflowState) -> WorkflowState:
     """
-    Analyze a document using GPT-4o.
+    Analyze a document using GPT-4o with global context awareness.
     
     Args:
         state: The current workflow state
@@ -171,6 +178,7 @@ def analyze_document(state: WorkflowState) -> WorkflowState:
         document_content = state["document_content"]
         document_path = state["document_path"]
         document_url = state["document_url"]
+        global_context = state.get("global_context")
         
         # Initialize the LLM
         llm = ChatOpenAI(
@@ -179,8 +187,18 @@ def analyze_document(state: WorkflowState) -> WorkflowState:
             api_key=os.getenv("OPENAI_API_KEY")
         )
         
-        # Prepare the prompt
-        prompt = DOCUMENT_ANALYSIS_PROMPT.format(document_content=document_content)
+        # Prepare the prompt based on whether we have global context
+        if global_context:
+            # Use context-aware prompt
+            prompt = CONTEXT_AWARE_DOCUMENT_ANALYSIS_PROMPT.format(
+                document_content=document_content,
+                global_context=json.dumps(global_context, indent=2)
+            )
+            logger.info("Using context-aware document analysis")
+        else:
+            # Use standard prompt
+            prompt = DOCUMENT_ANALYSIS_PROMPT.format(document_content=document_content)
+            logger.info("Using standard document analysis (no global context)")
         
         # Call the LLM
         messages = [
@@ -195,7 +213,6 @@ def analyze_document(state: WorkflowState) -> WorkflowState:
             analysis_result = json.loads(response.content)
         except json.JSONDecodeError:
             # If the response is not valid JSON, try to extract JSON from the text
-            import re
             json_match = re.search(r'```json\n(.*?)\n```', response.content, re.DOTALL)
             if json_match:
                 analysis_result = json.loads(json_match.group(1))
@@ -226,7 +243,7 @@ def analyze_document(state: WorkflowState) -> WorkflowState:
 
 def extract_concepts(state: WorkflowState) -> WorkflowState:
     """
-    Extract key concepts from an analysis result.
+    Extract key concepts from an analysis result with global context awareness.
     
     Args:
         state: The current workflow state
@@ -243,6 +260,7 @@ def extract_concepts(state: WorkflowState) -> WorkflowState:
         
         analysis = state["analysis"]
         document_content = state["document_content"]
+        global_context = state.get("global_context")
         
         # Initialize the LLM
         llm = ChatOpenAI(
@@ -251,8 +269,18 @@ def extract_concepts(state: WorkflowState) -> WorkflowState:
             api_key=os.getenv("OPENAI_API_KEY")
         )
         
-        # Prepare the prompt
-        prompt = CONCEPT_EXTRACTION_PROMPT.format(document_content=document_content)
+        # Prepare the prompt based on whether we have global context
+        if global_context:
+            # Use context-aware prompt
+            prompt = CONTEXT_AWARE_CONCEPT_EXTRACTION_PROMPT.format(
+                document_content=document_content,
+                global_context=json.dumps(global_context, indent=2)
+            )
+            logger.info("Using context-aware concept extraction")
+        else:
+            # Use standard prompt
+            prompt = CONCEPT_EXTRACTION_PROMPT.format(document_content=document_content)
+            logger.info("Using standard concept extraction (no global context)")
         
         # Call the LLM
         messages = [
@@ -267,7 +295,6 @@ def extract_concepts(state: WorkflowState) -> WorkflowState:
             concepts = json.loads(response.content)
         except json.JSONDecodeError:
             # If the response is not valid JSON, try to extract JSON from the text
-            import re
             json_match = re.search(r'```json\n(.*?)\n```', response.content, re.DOTALL)
             if json_match:
                 concepts = json.loads(json_match.group(1))
@@ -288,7 +315,7 @@ def extract_concepts(state: WorkflowState) -> WorkflowState:
 
 def extract_implementation_details(state: WorkflowState) -> WorkflowState:
     """
-    Extract implementation details from an analysis result.
+    Extract implementation details from an analysis result with global context awareness.
     
     Args:
         state: The current workflow state
@@ -304,6 +331,7 @@ def extract_implementation_details(state: WorkflowState) -> WorkflowState:
             return state
         
         document_content = state["document_content"]
+        global_context = state.get("global_context")
         
         # Initialize the LLM
         llm = ChatOpenAI(
@@ -312,8 +340,18 @@ def extract_implementation_details(state: WorkflowState) -> WorkflowState:
             api_key=os.getenv("OPENAI_API_KEY")
         )
         
-        # Prepare the prompt
-        prompt = IMPLEMENTATION_PATTERN_PROMPT.format(document_content=document_content)
+        # Prepare the prompt based on whether we have global context
+        if global_context:
+            # Use context-aware prompt
+            prompt = CONTEXT_AWARE_IMPLEMENTATION_PATTERN_PROMPT.format(
+                document_content=document_content,
+                global_context=json.dumps(global_context, indent=2)
+            )
+            logger.info("Using context-aware implementation pattern extraction")
+        else:
+            # Use standard prompt
+            prompt = IMPLEMENTATION_PATTERN_PROMPT.format(document_content=document_content)
+            logger.info("Using standard implementation pattern extraction (no global context)")
         
         # Call the LLM
         messages = [
@@ -328,7 +366,6 @@ def extract_implementation_details(state: WorkflowState) -> WorkflowState:
             implementation_details = json.loads(response.content)
         except json.JSONDecodeError:
             # If the response is not valid JSON, try to extract JSON from the text
-            import re
             json_match = re.search(r'```json\n(.*?)\n```', response.content, re.DOTALL)
             if json_match:
                 implementation_details = json.loads(json_match.group(1))
@@ -347,12 +384,55 @@ def extract_implementation_details(state: WorkflowState) -> WorkflowState:
         return state
 
 
+def update_global_context(state: WorkflowState) -> WorkflowState:
+    """
+    Update the global context with information from the analyzed document.
+    
+    Args:
+        state: The current workflow state
+        
+    Returns:
+        Updated workflow state
+        
+    Raises:
+        AnalysisError: If the global context cannot be updated
+    """
+    try:
+        if "error" in state and state["error"]:
+            return state
+            
+        # Only update if we have global context and analysis results
+        if state.get("global_context") and state.get("document_content"):
+            try:
+                # Import here to avoid circular imports
+                from document_it.context.context_manager import ContextManager
+                
+                # Update global context
+                context_manager = ContextManager()
+                context_manager.update_from_document(
+                    document_content=state["document_content"],
+                    document_path=state["document_path"]
+                )
+                
+                logger.info(f"Updated global context with information from {state['document_path']}")
+            except Exception as e:
+                logger.warning(f"Failed to update global context: {str(e)}")
+                # Continue even if update fails
+        
+        return state
+    
+    except Exception as e:
+        logger.error(f"Error in update_global_context: {str(e)}")
+        state["error"] = f"Failed to update global context: {str(e)}"
+        return state
+
+
 def analyze_document_with_workflow(
     document_path: str,
     document_url: str
 ) -> Dict[str, Any]:
     """
-    Analyze a document using the LangGraph workflow.
+    Analyze a document using the LangGraph workflow with global context awareness.
     
     Args:
         document_path: Path to the document
@@ -365,14 +445,25 @@ def analyze_document_with_workflow(
         AnalysisError: If the document cannot be analyzed
     """
     try:
+        # Get global context
+        try:
+            from document_it.context.context_manager import ContextManager
+            context_manager = ContextManager()
+            global_context = context_manager.get_context().to_dict()
+            logger.info("Retrieved global context for document analysis")
+        except Exception as e:
+            logger.warning(f"Failed to get global context: {str(e)}")
+            global_context = None
+        
         # Set up the workflow
         workflow = setup_langgraph_workflow()
         
-        # Initialize the state
+        # Initialize the state with global context
         initial_state = WorkflowState(
             document_path=document_path,
             document_url=document_url,
             document_content="",
+            global_context=global_context,
             analysis=None,
             concepts=None,
             implementation_details=None,
@@ -430,6 +521,16 @@ def synthesize_topics(analyses: List[Dict[str, Any]]) -> Dict[str, Any]:
         # Synthesize information for each topic
         synthesized_topics = {}
         
+        # Get global context for synthesis
+        try:
+            from document_it.context.context_manager import ContextManager
+            context_manager = ContextManager()
+            global_context = context_manager.get_context().to_dict()
+            logger.info("Retrieved global context for topic synthesis")
+        except Exception as e:
+            logger.warning(f"Failed to get global context for synthesis: {str(e)}")
+            global_context = None
+        
         for topic_name, topic_analyses in topics.items():
             # Initialize the LLM
             llm = ChatOpenAI(
@@ -439,6 +540,7 @@ def synthesize_topics(analyses: List[Dict[str, Any]]) -> Dict[str, Any]:
             )
             
             # Prepare the prompt
+            # TODO: Create a context-aware synthesis prompt
             prompt = TOPIC_SYNTHESIS_PROMPT.format(document_analyses=json.dumps(topic_analyses, indent=2))
             
             # Call the LLM
@@ -454,7 +556,6 @@ def synthesize_topics(analyses: List[Dict[str, Any]]) -> Dict[str, Any]:
                 synthesis = json.loads(response.content)
             except json.JSONDecodeError:
                 # If the response is not valid JSON, try to extract JSON from the text
-                import re
                 json_match = re.search(r'```json\n(.*?)\n```', response.content, re.DOTALL)
                 if json_match:
                     synthesis = json.loads(json_match.group(1))

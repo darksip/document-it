@@ -2,6 +2,39 @@
 
 All notable changes to the Document-it project will be documented in this file.
 
+## [1.1.0] - 2025-03-07
+
+### Added
+
+- Global Context Management component implementation
+  - Context extraction from root/landing page
+  - Context storage and versioning
+  - Context enrichment from analyzed documents
+  - Context-aware document analysis
+  - Context-aware guideline generation
+- New command-line options:
+  - `--root-page`: URL of the product's root/landing page for global context extraction
+  - `--context-dir`: Directory to store global context data
+- Context-aware prompts for LLM analysis
+- Global context summary in generated guidelines
+- Unit tests for the Context Management component
+
+### Changed
+
+- Updated document analysis workflow to incorporate global context
+- Enhanced markdown generator to include global context in guidelines
+- Improved main application to initialize global context from root page
+- Updated implementation guidelines with product context sections
+
+### Fixed
+
+- Issue with deep links losing context of the global subject of the documentation
+
+## Commit Summary
+feat: Implement Global Context Management to maintain awareness of product structure
+
+This change implements a Global Context Management system that extracts high-level information from the root/landing page and maintains this context throughout document analysis. The context is enriched as more documents are analyzed and injected into each analysis, ensuring that deep links maintain awareness of the overall product structure and purpose. This addresses the issue where accessing specific parts of the documentation would lose the broader context about what the product is, its purpose, and main features.
+
 ## [1.0.0] - 2025-03-07
 
 ### Added

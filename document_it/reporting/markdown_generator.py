@@ -49,6 +49,17 @@ def generate_topic_guideline(topic: str, analyses: Dict[str, Any]) -> str:
         GenerationError: If guidelines cannot be generated
     """
     try:
+        # Get global context
+        try:
+            from document_it.context.context_manager import ContextManager
+            context_manager = ContextManager()
+            global_context = context_manager.get_context()
+            has_global_context = True
+            logger.info(f"Retrieved global context for topic: {topic}")
+        except Exception as e:
+            logger.warning(f"Failed to get global context: {str(e)}")
+            has_global_context = False
+        
         # Extract key information from analyses
         key_concepts = []
         implementation_details = []
@@ -81,13 +92,48 @@ def generate_topic_guideline(topic: str, analyses: Dict[str, Any]) -> str:
         # Generate the markdown content
         content = f"# {topic}\n\n"
         
+        # Add global context section if available
+        if has_global_context:
+            content += "## Product Context\n\n"
+            
+            # Add product name and description
+            if global_context.product_name:
+                content += f"{global_context.product_name} is {global_context.product_description}\n\n"
+            
+            # Add primary purpose
+            if global_context.primary_purpose:
+                content += f"**Primary Purpose**: {global_context.primary_purpose}\n\n"
+            
+            # Check if this topic is a main feature in the global context
+            if topic in global_context.main_features:
+                feature = global_context.main_features[topic]
+                content += f"**Feature Importance**: {'★' * min(feature.importance, 5)}\n\n"
+                content += f"{feature.description}\n\n"
+                
+                # Add related features if available
+                if feature.related_features:
+                    content += "**Related Features**: "
+                    feature_links = []
+                    for related in feature.related_features:
+                        feature_links.append(f"[{related}]({related.lower().replace(' ', '-')}.md)")
+                    content += ", ".join(feature_links) + "\n\n"
+        
         # Overview section
         content += "## Overview\n\n"
-        content += f"{topic} is a key concept in the Agno framework. "
-        if key_concepts:
-            content += f"It is characterized by {key_concepts[0].get('description', '')}.\n\n"
+        if has_global_context and global_context.product_name:
+            product_name = global_context.product_name
+            if key_concepts:
+                content += f"{topic} is a key concept in the {product_name} framework. "
+                content += f"It is characterized by {key_concepts[0].get('description', '')}.\n\n"
+            else:
+                content += f"This document provides implementation guidelines for working with {topic} in the context of {product_name}.\n\n"
         else:
-            content += "This document provides implementation guidelines for working with this topic.\n\n"
+            # Fallback to original text if no global context
+            if key_concepts:
+                content += f"{topic} is a key concept in the framework. "
+                content += f"It is characterized by {key_concepts[0].get('description', '')}.\n\n"
+            else:
+                content += "This document provides implementation guidelines for working with this topic.\n\n"
         
         # Key Concepts section
         content += "## Key Concepts\n\n"
@@ -97,6 +143,10 @@ def generate_topic_guideline(topic: str, analyses: Dict[str, Any]) -> str:
                 importance_str = "★" * min(importance, 5)  # Show up to 5 stars for importance
                 content += f"### {concept.get('name', 'Unnamed Concept')} {importance_str}\n\n"
                 content += f"{concept.get('description', 'No description available.')}\n\n"
+                
+                # Add relation to product if available
+                if has_global_context and "relation_to_product" in concept:
+                    content += f"**Relation to {global_context.product_name}**: {concept['relation_to_product']}\n\n"
         else:
             content += "No key concepts identified for this topic.\n\n"
         
@@ -106,6 +156,10 @@ def generate_topic_guideline(topic: str, analyses: Dict[str, Any]) -> str:
             for detail in implementation_details:
                 content += f"### {detail.get('title', 'Unnamed Pattern')}\n\n"
                 content += f"{detail.get('description', 'No description available.')}\n\n"
+                
+                # Add scope if available
+                if "scope" in detail:
+                    content += f"**Scope**: {detail['scope']}\n\n"
                 
                 # Add code example if available
                 if "code_example" in detail and detail["code_example"]:
@@ -138,9 +192,33 @@ def generate_topic_guideline(topic: str, analyses: Dict[str, Any]) -> str:
             for related in related_topics:
                 name = related.get("name", "Unnamed Topic")
                 relationship = related.get("relationship", "related to")
-                content += f"- [{name}]({name.lower().replace(' ', '-')}.md): {relationship} {topic}\n"
+                content += f"- [{name}]({name.lower().replace(' ', '-')}.md): {relationship} {topic}"
+                
+                # Add global feature reference if available
+                if has_global_context and "global_feature" in related:
+                    global_feature = related["global_feature"]
+                    content += f" (part of the [{global_feature}]({global_feature.lower().replace(' ', '-')}.md) feature)"
+                
+                content += "\n"
         else:
             content += "No related topics identified.\n\n"
+        
+        # Add terminology from global context if available
+        if has_global_context and global_context.terminology:
+            content += "## Relevant Terminology\n\n"
+            relevant_terms = {}
+            
+            # Search through all text content to find terms that appear
+            all_text = content.lower()
+            for term, definition in global_context.terminology.items():
+                if term.lower() in all_text:
+                    relevant_terms[term] = definition
+                    
+            if relevant_terms:
+                for term, definition in relevant_terms.items():
+                    content += f"**{term}**: {definition}\n\n"
+            else:
+                content += "No relevant terminology identified.\n\n"
         
         logger.info(f"Generated guideline for topic: {topic}")
         return content
@@ -254,8 +332,40 @@ def generate_index_document(topics: List[str], summaries: Dict[str, str]) -> str
         IndexError: If index cannot be generated
     """
     try:
-        content = "# Agno Framework Implementation Guidelines\n\n"
-        content += "This document provides implementation guidelines for the Agno framework, based on analysis of the framework's documentation.\n\n"
+        # Get product name from global context if available
+        product_name = "Framework"
+        try:
+            from document_it.context.context_manager import ContextManager
+            context_manager = ContextManager()
+            global_context = context_manager.get_context()
+            if global_context.product_name:
+                product_name = global_context.product_name
+            logger.info(f"Retrieved product name from global context: {product_name}")
+        except Exception as e:
+            logger.warning(f"Failed to get product name from global context: {str(e)}")
+        
+        content = f"# {product_name} Implementation Guidelines\n\n"
+        
+        # Add product description if available
+        try:
+            if global_context.product_description:
+                content += f"{global_context.product_description}\n\n"
+            if global_context.primary_purpose:
+                content += f"**Primary Purpose**: {global_context.primary_purpose}\n\n"
+        except:
+            # Fallback if global context isn't available
+            content += f"This document provides implementation guidelines for the {product_name}, based on analysis of the documentation.\n\n"
+        
+        # Add global context summary if available
+        try:
+            if global_context.main_features:
+                content += "## Main Features\n\n"
+                for name, feature in global_context.main_features.items():
+                    importance = "★" * min(feature.importance, 5)
+                    content += f"- [{name}]({name.lower().replace(' ', '-')}.md) {importance}: {feature.description[:100]}...\n"
+                content += "\n"
+        except:
+            pass
         
         content += "## Topics\n\n"
         
@@ -282,6 +392,22 @@ def generate_index_document(topics: List[str], summaries: Dict[str, str]) -> str
     except Exception as e:
         logger.error(f"Error generating index document: {str(e)}")
         raise IndexError(f"Failed to generate index document: {str(e)}")
+
+
+def generate_global_context_summary() -> str:
+    """
+    Generate a summary of the global context.
+    
+    Returns:
+        Markdown content summarizing the global context
+    """
+    try:
+        from document_it.context.context_manager import ContextManager
+        context_manager = ContextManager()
+        return context_manager.export_context_summary()
+    except Exception as e:
+        logger.error(f"Error generating global context summary: {str(e)}")
+        return "# Global Context\n\nFailed to generate global context summary.\n"
 
 
 def generate_guidelines_from_analyses(analyses_dir: str, output_dir: str) -> List[str]:
@@ -361,6 +487,16 @@ def generate_guidelines_from_analyses(analyses_dir: str, output_dir: str) -> Lis
         
         # Create cross-references
         guidelines = create_cross_references(guidelines)
+        
+        # Generate global context summary
+        try:
+            global_context_summary = generate_global_context_summary()
+            global_context_path = output_path / "global_context.md"
+            with open(global_context_path, "w") as f:
+                f.write(global_context_summary)
+            logger.info(f"Generated global context summary: {global_context_path}")
+        except Exception as e:
+            logger.warning(f"Failed to generate global context summary: {str(e)}")
         
         # Generate index document
         index_content = generate_index_document(list(topics), summaries)

@@ -125,3 +125,73 @@ Format your response as a structured JSON object with the following keys:
 
 Your summary should be clear, concise, and focused on practical implementation guidance.
 """
+
+# Context-aware document analysis prompt
+CONTEXT_AWARE_DOCUMENT_ANALYSIS_PROMPT = """
+You are an expert technical documentation analyzer. Your task is to analyze the provided document in the context of the overall product.
+
+Global Product Context:
+{global_context}
+
+Document Content:
+{document_content}
+
+Please analyze this document and provide the following information:
+1. Key Concepts: Identify and explain the main concepts discussed in the document, especially how they relate to the global product context.
+2. Implementation Details: Extract any implementation guidelines, patterns, or best practices.
+3. Code Patterns: Identify any code patterns or structures mentioned.
+4. Related Topics: List any related topics mentioned in the document, including connections to the main product features.
+
+Format your response as a structured JSON object with the following keys:
+- key_concepts: Array of objects with "name", "description", "importance" (1-10), and "relation_to_product" (how this concept relates to the overall product)
+- implementation_details: Array of objects with "title", "description", and "scope" (whether this applies to a specific feature or the whole product)
+- code_patterns: Array of objects with "name", "description", and "example" (if available)
+- related_topics: Array of objects with "name", "relationship", and "global_feature" (which global feature this relates to, if any)
+
+Focus on unique information specific to this document and avoid repeating general information already contained in the global context.
+"""
+
+# Context-aware concept extraction prompt
+CONTEXT_AWARE_CONCEPT_EXTRACTION_PROMPT = """
+You are an expert in knowledge extraction. Your task is to identify and extract the key concepts from the provided document within the context of the overall product.
+
+Global Product Context:
+{global_context}
+
+Document Content:
+{document_content}
+
+Please extract the key concepts from this document. For each concept, provide:
+1. Name: A concise name for the concept
+2. Description: A clear explanation of what the concept is
+3. Importance: A rating from 1-10 indicating how central this concept is to the document
+4. Related Concepts: Other concepts that are closely related to this one
+5. Context Integration: Explain how this concept fits into the global product context
+
+Format your response as a structured JSON array of objects, each with the keys "name", "description", "importance", "related_concepts", and "context_integration".
+
+Focus on technical concepts that are essential to understanding the document's subject matter, especially emphasizing what makes this document's information unique compared to the global context.
+"""
+
+# Context-aware implementation pattern extraction prompt
+CONTEXT_AWARE_IMPLEMENTATION_PATTERN_PROMPT = """
+You are an expert in software implementation patterns. Your task is to identify and extract implementation guidelines and patterns from the provided document, considering the global product context.
+
+Global Product Context:
+{global_context}
+
+Document Content:
+{document_content}
+
+Please extract the implementation guidelines and patterns from this document. For each pattern, provide:
+1. Title: A concise name for the pattern or guideline
+2. Description: A clear explanation of how to implement it
+3. Use Case: When this pattern should be applied
+4. Code Example: An example of the pattern in code (if available in the document)
+5. Feature Relevance: Which product features this pattern is most relevant to
+6. Scope: Whether this pattern applies to a specific feature or the whole product
+
+Format your response as a structured JSON array of objects, each with the keys "title", "description", "use_case", "code_example", "feature_relevance", and "scope".
+
+Focus on practical implementation details that would help a developer understand how to use the concepts described in the document within the context of the overall product.
+"""
