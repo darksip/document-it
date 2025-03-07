@@ -3,6 +3,8 @@
 - **No Pip:** Absolutely no `pip install` commands or `requirements.txt` changes. Documentation, CI scripts, and local dev environment must rely solely on UV.
 - **Maintain UV Config:** When you add a new dependency, update `pyproject.toml` (or equivalent config) and rerun UV’s resolver. Commit the lockfile to ensure reproducibility.
 - **Document Dependencies:** For less common libraries, explain their usage in code comments or project docs so the entire team knows why they were added.
+- **To install dependencies** added in pyroject.toml run uv sync
+- **To run any python command** you'll need to prefix it with uv run 
 
 ## 2. Readme File
 - when acting as an architect always check the README.md file to remove obsolete parts.

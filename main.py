@@ -4,9 +4,11 @@ Document-it: A tool to document LLMs by analyzing web documents.
 
 import argparse
 import logging
+import json
 import sys
 from pathlib import Path
 
+from document_it.parser import extract_urls_from_markdown, categorize_documents
 from document_it.web import connect_to_website, download_file
 
 # Configure logging
@@ -67,14 +69,33 @@ def main():
         raw_dir = Path("data/raw")
         raw_dir.mkdir(parents=True, exist_ok=True)
         filename, content = download_file(args.url, destination=raw_dir / "llms.txt", session=session)
-        
         logger.info(f"Successfully downloaded {filename}")
+        
+        # 2. Parse the file to extract document references
+        logger.info("Parsing llms.txt to extract document references...")
+        with open(raw_dir / "llms.txt", "r") as f:
+            content = f.read()
+        
+        # Extract URLs from the markdown content
+        base_url = args.url.rsplit('/', 1)[0]  # Get base URL by removing filename
+        document_refs = extract_urls_from_markdown(content, base_url)
+        logger.info(f"Extracted {len(document_refs)} document references")
+        
+        # Categorize documents
+        categories = categorize_documents(document_refs)
+        logger.info(f"Categorized documents into {len(categories)} categories")
+        
+        # Save the extracted document references to a JSON file
+        processed_dir = Path("data/processed")
+        processed_dir.mkdir(parents=True, exist_ok=True)
+        with open(processed_dir / "document_refs.json", "w") as f:
+            json.dump(document_refs, f, indent=2)
+        logger.info(f"Saved document references to {processed_dir / 'document_refs.json'}")
         
     except Exception as e:
         logger.error(f"Error: {str(e)}")
         return 1
-        
-    # 2. Parse the file to extract document references
+    
     # 3. Process and download referenced documents
     # 4. Analyze documents with LangGraph
     # 5. Generate implementation guidelines
