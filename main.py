@@ -8,6 +8,7 @@ import json
 import sys
 from pathlib import Path
 
+from document_it.analysis import analyze_document_with_workflow, synthesize_topics
 from document_it.parser import extract_urls_from_markdown, categorize_documents
 from document_it.processor import process_document_batch, create_document_index
 from document_it.web import connect_to_website, download_file
@@ -43,6 +44,11 @@ def setup_arg_parser():
         default=5,
         help="Maximum number of concurrent downloads (default: 5)"
     )
+    parser.add_argument(
+        "--analyze-count",
+        type=int,
+        default=3,
+        help="Number of documents to analyze (default: 3)")
     parser.add_argument(
         "--verbose", 
         action="store_true", 
@@ -119,6 +125,31 @@ def main():
         index_path = create_document_index(batch_result['document_paths'])
         logger.info(f"Created document index at {index_path}")
         logger.info(f"Successfully downloaded {batch_result['success_count']} documents, {len(batch_result['failed_urls'])} failed")
+
+        # 4. Analyze documents with LangGraph
+        logger.info("Analyzing documents with LangGraph...")
+        
+        # Limit the number of documents to analyze
+        analyze_count = min(args.analyze_count, len(batch_result['document_paths']))
+        logger.info(f"Limiting analysis to {analyze_count} documents")
+        
+        # Get the document paths and URLs
+        document_items = list(batch_result['document_paths'].items())[:analyze_count]
+        
+        # Analyze each document
+        analyses = []
+        for document_url, document_path in document_items:
+            logger.info(f"Analyzing document: {document_path}")
+            analysis = analyze_document_with_workflow(document_path, document_url)
+            analyses.append(analysis)
+            
+            # Save the analysis result
+            analysis_path = Path(f"data/output/analysis_{Path(document_path).stem}.json")
+            with open(analysis_path, "w") as f:
+                json.dump(analysis, f, indent=2)
+            logger.info(f"Saved analysis to {analysis_path}")
+        
+        logger.info(f"Successfully analyzed {len(analyses)} documents")
         
     except Exception as e:
         logger.error(f"Error: {str(e)}")
