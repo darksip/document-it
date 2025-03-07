@@ -1,6 +1,6 @@
 [project]
 name = "document-it"
-version = "1.0.0"
+version = "1.2.0"
 description = "A tool to document LLMs by analyzing web documents"
 readme = "README.md"
 requires-python = ">=3.11"

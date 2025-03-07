@@ -1,8 +1,7 @@
 """
 Context Manager module for Document-it.
 
-This module provides the main interface for working with global context,
-coordinating between the repository, analyzer, and other components.
+This module provides the main interface for working with global context.
 """
 
 import logging
@@ -10,7 +9,6 @@ import os
 from typing import Dict, Any, Optional
 
 from document_it.context.context_repository import ContextRepository
-from document_it.context.context_analyzer import ContextAnalyzer
 from document_it.context.models import GlobalContext, ContextEnrichment
 
 logger = logging.getLogger("document-it.context")
@@ -20,13 +18,11 @@ class ContextManager:
     """
     Main interface for working with global context.
     
-    This class coordinates between the context repository and analyzer,
-    providing a simplified interface for initializing, updating, and
-    accessing global context.
+    This class provides methods for initializing, updating, and accessing
+    global context information.
     
     Attributes:
         repository: The context repository for storage and retrieval
-        analyzer: The context analyzer for extracting context from documents
     """
     
     def __init__(self, data_dir: str = "data/context"):
@@ -37,31 +33,37 @@ class ContextManager:
             data_dir: Directory to store context data
         """
         self.repository = ContextRepository(data_dir)
-        self.analyzer = ContextAnalyzer(api_key=os.getenv("OPENAI_API_KEY"))
-        
-    def initialize_from_root_page(self, root_content: str) -> GlobalContext:
+    
+    def initialize_from_text(self, content: str) -> GlobalContext:
         """
-        Initialize global context from root page content.
+        Initialize global context from text content.
         
-        This method extracts initial context from the root page
-        and stores it in the repository.
+        This is a placeholder method that will be replaced with actual
+        context extraction logic in Phase 4.
         
         Args:
-            root_content: Content of the root page
+            content: Text content to extract context from
             
         Returns:
             The initialized global context
         """
-        logger.info("Initializing global context from root page")
+        logger.info("Initializing global context from text content")
         
-        # Extract context from root page
-        initial_context = self.analyzer.extract_initial_context(root_content)
+        # Create a minimal context as a placeholder
+        # This will be replaced with actual extraction logic
+        context = GlobalContext(
+            product_name="Extracted from content",
+            product_description="This is a placeholder description extracted from content",
+            primary_purpose="Placeholder purpose",
+            target_audience=["Placeholder audience"],
+            confidence_score=0.5
+        )
         
         # Store in repository
-        self.repository._context = initial_context
+        self.repository._context = context
         self.repository.save_context()
         
-        return initial_context
+        return context
     
     def get_context(self) -> GlobalContext:
         """
@@ -72,27 +74,46 @@ class ContextManager:
         """
         return self.repository.get_context()
     
-    def update_from_document(self, document_content: str, document_path: str) -> ContextEnrichment:
+    def update_from_text(self, content: str, document_path: str) -> ContextEnrichment:
         """
-        Update global context based on new document content.
+        Update global context based on new text content.
         
-        This method analyzes a document to extract new information
-        and updates the global context accordingly.
+        This is a placeholder method that will be replaced with actual
+        context enrichment logic in Phase 4.
         
         Args:
-            document_content: Content of the document to analyze
+            content: Text content to extract context from
             document_path: Path to the document (for reference)
             
         Returns:
             Record of what was changed in the context
         """
-        current_context = self.repository.get_context()
+        logger.info(f"Updating global context from document: {document_path}")
         
-        # Extract potential enrichments
-        enriched_context = self.analyzer.enrich_context(current_context, document_content)
+        # Create a minimal context update as a placeholder
+        # This will be replaced with actual extraction logic
+        new_context = GlobalContext(
+            product_name="Updated from content",
+            product_description="This is a placeholder description updated from content",
+            primary_purpose="Updated purpose",
+            target_audience=["Updated audience"],
+            confidence_score=0.6
+        )
+        
+        # Add a sample feature
+        from document_it.context.models import ProductFeature
+        new_context.main_features["Sample Feature"] = ProductFeature(
+            name="Sample Feature",
+            description="This is a sample feature extracted from the document",
+            importance=7,
+            related_features=[]
+        )
+        
+        # Add sample terminology
+        new_context.terminology["Sample Term"] = "This is a sample term definition"
         
         # Update repository
-        enrichment = self.repository.update_context(enriched_context, document_path)
+        enrichment = self.repository.update_context(new_context, document_path)
         
         return enrichment
     
@@ -100,8 +121,8 @@ class ContextManager:
         """
         Get context specifically relevant for a document.
         
-        This method filters the global context to include only
-        parts that are relevant to the specific document.
+        This method will be implemented in Phase 4 to filter the global context
+        to include only parts that are relevant to the specific document.
         
         Args:
             document_content: Content of the document
@@ -115,7 +136,7 @@ class ContextManager:
         # Convert to dictionary for manipulation
         context_dict = context.to_dict()
         
-        # TODO: Add logic to filter context to most relevant parts
+        # In Phase 4, we'll add logic to filter context to most relevant parts
         # For now, just return the full context
         
         return context_dict
@@ -123,9 +144,6 @@ class ContextManager:
     def export_context_summary(self) -> str:
         """
         Generate a human-readable summary of the global context.
-        
-        This method creates a markdown summary of the global context
-        that can be included in documentation or viewed directly.
         
         Returns:
             Markdown-formatted summary of the global context

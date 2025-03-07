@@ -2,6 +2,42 @@
 
 All notable changes to the Document-it project will be documented in this file.
 
+## [1.2.0] - 2025-03-08
+
+### Added
+
+- Enhanced HTML Parser with structure preservation
+  - Document structure extraction (headings, sections, links, text blocks)
+  - Metadata extraction from HTML meta tags
+  - Hierarchical section identification with parent-child relationships
+  - Link context extraction for better understanding of link purpose
+  - Robust error handling for malformed HTML
+- Content Prioritization system
+  - Algorithms to score and rank content sections based on relevance
+  - Multiple scoring factors: structural importance, content relevance, visual prominence
+  - Link scoring based on URL structure, text, and context
+  - Text relevance scoring against product-related keywords
+  - Configurable weights for different scoring factors
+- Comprehensive test suite for HTML parsing and content prioritization
+
+### Changed
+
+- Improved context extraction from HTML documentation
+- Enhanced section identification logic for better document structure understanding
+- Updated content analysis to prioritize most relevant sections
+- Refined metadata extraction for better product understanding
+
+### Fixed
+
+- Improved handling of malformed HTML in documentation
+- Better extraction of content from complex HTML structures
+- More accurate identification of important content sections
+
+## Commit Summary
+feat: Implement enhanced HTML parser with structure preservation and content prioritization
+
+This change implements a robust HTML parser that preserves document structure and a content prioritization system that ranks sections by relevance. The HTML parser extracts document structure including headings, sections, links, and text blocks, while maintaining hierarchical relationships. The content prioritizer uses multiple scoring factors to identify the most relevant sections of documentation. Together, these components significantly improve the system's ability to extract global context from product documentation, ensuring that deep links maintain awareness of the overall product structure and purpose.
+
 ## [1.1.0] - 2025-03-07
 
 ### Added
