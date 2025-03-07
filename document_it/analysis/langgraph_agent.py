@@ -14,7 +14,7 @@ from typing import Dict, List, Optional, Any, Tuple, TypedDict, Annotated
 import openai
 from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_openai import ChatOpenAI
+from langchain_openai import ChatOpenAI, OpenAI
 from langgraph.graph import StateGraph, END
 
 from document_it.analysis.prompts import (
@@ -105,6 +105,7 @@ def setup_langgraph_workflow() -> Any:
         workflow.add_node("extract_implementation_details", extract_implementation_details)
         
         # Define the edges
+        workflow.set_entry_point("read_document")
         workflow.add_edge("read_document", "analyze_document")
         workflow.add_edge("analyze_document", "extract_concepts")
         workflow.add_edge("extract_concepts", "extract_implementation_details")

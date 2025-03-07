@@ -10,6 +10,7 @@ from pathlib import Path
 
 from document_it.analysis import analyze_document_with_workflow, synthesize_topics
 from document_it.parser import extract_urls_from_markdown, categorize_documents
+from document_it.reporting import generate_guidelines_from_analyses
 from document_it.processor import process_document_batch, create_document_index
 from document_it.web import connect_to_website, download_file
 
@@ -49,6 +50,11 @@ def setup_arg_parser():
         type=int,
         default=3,
         help="Number of documents to analyze (default: 3)")
+    parser.add_argument(
+        "--generate-guidelines",
+        action="store_true",
+        help="Generate implementation guidelines from analysis results"
+    )
     parser.add_argument(
         "--verbose", 
         action="store_true", 
@@ -150,6 +156,16 @@ def main():
             logger.info(f"Saved analysis to {analysis_path}")
         
         logger.info(f"Successfully analyzed {len(analyses)} documents")
+
+        # 5. Generate implementation guidelines
+        if args.generate_guidelines:
+            logger.info("Generating implementation guidelines...")
+            
+            # Generate guidelines from analysis results
+            generated_files = generate_guidelines_from_analyses("data/output", "data/output/guidelines")
+            
+            logger.info(f"Generated {len(generated_files)} guideline files")
+            logger.info(f"Guidelines available at: {Path('data/output/guidelines').absolute()}")
         
     except Exception as e:
         logger.error(f"Error: {str(e)}")
