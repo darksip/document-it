@@ -14,7 +14,7 @@ from typing import Dict, List, Any, Optional, Tuple
 
 import openai
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_openai import ChatOpenAI, AsyncChatOpenAI
+from langchain_openai import ChatOpenAI
 
 logger = logging.getLogger("document-it.analysis.async")
 
@@ -54,13 +54,7 @@ class AsyncOpenAIClient:
         if not self.api_key:
             raise ValueError("OpenAI API key not found. Please set the OPENAI_API_KEY environment variable.")
         
-        # Initialize the async LLM client
-        self.async_llm = AsyncChatOpenAI(
-            model=self.model,
-            temperature=self.temperature,
-            api_key=self.api_key
-        )
-        
+        # Initialize the LLM client
         # For synchronous fallback
         self.sync_llm = ChatOpenAI(
             model=self.model,
@@ -89,24 +83,18 @@ class AsyncOpenAIClient:
             Exception: If all retries fail
         """
         try:
-            messages = [
-                SystemMessage(content=system_prompt),
-                HumanMessage(content=user_prompt)
-            ]
+            # Since AsyncChatOpenAI is not available, we'll use the synchronous version
+            # but run it in a separate thread to avoid blocking the event loop
             
-            response = await self.async_llm.ainvoke(messages)
-            return response.content
-        
-        except (openai.RateLimitError, openai.APITimeoutError) as e:
-            if retries < self.max_retries:
-                # Exponential backoff
-                wait_time = self.retry_delay * (2 ** retries)
-                logger.warning(f"API rate limit or timeout error, retrying in {wait_time:.2f}s: {str(e)}")
-                await asyncio.sleep(wait_time)
-                return await self.acompletion_with_retries(system_prompt, user_prompt, retries + 1)
-            else:
-                logger.error(f"Max retries exceeded for API call: {str(e)}")
-                raise
+            async def run_in_thread():
+                return await asyncio.to_thread(
+                    self.completion_with_retries,
+                    system_prompt,
+                    user_prompt
+                )
+            
+            response = await run_in_thread()
+            return response
         
         except Exception as e:
             logger.error(f"Error in API call: {str(e)}")

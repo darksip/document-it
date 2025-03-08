@@ -1,6 +1,6 @@
 # Document-it
 
-[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](https://github.com/yourrepository/document-it)
+[![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)](https://github.com/yourrepository/document-it)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/python-3.11+-yellow.svg)](https://www.python.org)
 
@@ -37,7 +37,7 @@ The application follows these steps:
 
 ```mermaid
 graph TD
-    A[Web Connector] --> B[File Parser]
+    A[Web Connector] --> B[File Parser] 
     A --> C[Context Manager]
     B --> D[Document Processor]
     C --> D
@@ -49,6 +49,13 @@ graph TD
     G --> H[Content Prioritizer]
     H --> I[Context Analyzer]
     I --> J[Context Repository]
+    end
+
+    subgraph "Parallelization System"
+    E --> K[Async Processing]
+    E --> L[Parallel Processing]
+    E --> M[Batch Optimization]
+    E --> N[Job Queue System]
     end
     
     classDef core fill:#f9f,stroke:#333,stroke-width:2px
@@ -88,6 +95,12 @@ graph TD
   - Implementation pattern extraction
   - Topic synthesis across documents
   - Context-aware document analysis
+
+- **Parallelization System**: Process documents efficiently with multiple parallelization strategies
+  - Asynchronous LLM processing for non-blocking API calls
+  - Process-based parallelization for CPU-bound operations
+  - Batch processing optimization with dynamic sizing
+  - Scalable job queue system for large document sets
 
 - **Report Generator**: Create implementation guidelines from analysis results
   - Markdown document generation
@@ -151,6 +164,16 @@ uv run python main.py --root-page https://agno.com/product --generate-guidelines
 uv run python main.py --root-page https://agno.com/product --test-context --visualize-context-extraction
 ```
 
+### Parallelization Options
+
+```bash
+# Use async parallelization with 5 workers
+uv run python main.py --parallelism-mode async --analysis-workers 5
+
+# Use job queue for large document sets
+uv run python main.py --enable-queue --analysis-workers 5 --analyze-count 20
+```
+
 ### Example Scenarios
 
 **Scenario 1: Basic documentation analysis**
@@ -174,7 +197,15 @@ This will:
 - Generate implementation guidelines with global context awareness
 - Results will be in data/output/guidelines/
 
-**Scenario 3: Context extraction testing**
+**Scenario 3: High-performance analysis with parallelization**
+```bash
+uv run python main.py --parallelism-mode hybrid --analysis-workers 8 --batch-size 4 --analyze-count 20
+```
+This will:
+- Process 20 documents using hybrid parallelization mode
+- Use 8 parallel workers and batch size of 4 for optimal performance
+
+**Scenario 4: Context extraction testing**
 ```bash
 uv run python main.py --root-page https://agno.com/product --test-context --visualize-context-extraction
 ```
@@ -194,6 +225,10 @@ This will:
 | `--context-dir` | Directory to store global context data | data/context |
 | `--max-workers` | Maximum number of concurrent downloads | 5 |
 | `--analyze-count` | Number of documents to analyze | 3 |
+| `--parallelism-mode` | Parallelization mode (sync, async, process, hybrid) | async |
+| `--analysis-workers` | Number of parallel workers for document analysis | 3 |
+| `--batch-size` | Batch size for LLM operations (0 = automatic) | 0 |
+| `--enable-queue` | Enable job queue for processing | False |
 | `--generate-guidelines` | Generate implementation guidelines | False |
 | `--test-context` | Output detailed context extraction information | False |
 | `--visualize-context-extraction` | Generate a visualization of the context extraction process | False |

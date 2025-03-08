@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple, TypedDict, Annotated, Coroutine
 
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_openai import ChatOpenAI, AsyncChatOpenAI
+from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, END
 
 from document_it.analysis.async_client import AsyncOpenAIClient

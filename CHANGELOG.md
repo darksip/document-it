@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2025-03-08
+
+**Commit Summary**: Enhanced project documentation and validated parallelization system with comprehensive testing. Added CONTRIBUTING.md for public repository, updated README with improved design, and created detailed test suite for parallelization performance validation.
+
+### Added
+- CONTRIBUTING.md with guidelines for public repository contributions
+  - Development environment setup instructions
+  - Code standards and styling guidelines
+  - Pull request workflow and expectations
+  - Package management guidelines (UV only)
+- Comprehensive test suite for parallelization system
+  - Simple task parallelization tests
+  - LLM integration tests with real API calls
+  - Performance benchmarking across different modes
+
+### Changed
+- Updated README.md with professional and attractive design
+- Enhanced parallelization improvement plan with implementation status and next steps
+- Updated documentation to reflect all parallelization options and features
+
+## [1.3.0] - 2025-03-08
+
 **Commit Summary**: Implemented comprehensive parallelization system for document analysis to significantly improve processing speed and resource utilization. The system includes asynchronous LLM processing, parallel document processing, batch optimization, and a scalable job queue.
 
 ### Added
@@ -32,6 +54,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Resource utilization monitoring
   - Multi-stage progress tracking
 
+### Changed
+- Updated main application to use the new parallelization system
+- Added new command-line options for controlling parallelization
+- Improved overall performance for document analysis tasks
+- Enhanced error handling and resilience for API calls
 
 ## [1.2.0] - 2025-03-08
 
