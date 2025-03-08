@@ -1,32 +1,28 @@
 """
 Context Repository module for Document-it.
 
-This module is responsible for storing and retrieving global context data.
+This module provides storage and retrieval functions for context data.
 """
 
-import json
 import logging
 import os
-import time
+import json
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, Optional, List
+from typing import Dict, List, Set, Optional, Any
 
-from document_it.context.models import GlobalContext, ContextEnrichment
+from document_it.context.models import GlobalContext, ContextEnrichment, ProductFeature
 
 logger = logging.getLogger("document-it.context")
 
 
 class ContextRepository:
     """
-    Repository for storing and retrieving global context.
-    
-    This class handles the persistence of global context data, including
-    versioning and history tracking.
+    Repository for storing and retrieving context data.
     
     Attributes:
-        data_dir: Directory to store context data
-        _context: Current global context
+        data_dir: Directory for storing context data
+        _context: Cached global context
     """
     
     def __init__(self, data_dir: str = "data/context"):
@@ -37,41 +33,16 @@ class ContextRepository:
             data_dir: Directory to store context data
         """
         self.data_dir = data_dir
-        self._context = GlobalContext()
-        
-        # Create data directory if it doesn't exist
-        self._ensure_directories()
-        
-        # Load existing context if available
-        self._load_context()
+        self._context = None
+        self._initialize_data_dir()
     
-    def _ensure_directories(self):
-        """Ensure that the data directories exist."""
-        # Main data directory
-        Path(self.data_dir).mkdir(parents=True, exist_ok=True)
-        
-        # History directory
-        history_dir = Path(self.data_dir) / "history"
-        history_dir.mkdir(exist_ok=True)
-    
-    def _load_context(self):
-        """Load the most recent context from disk."""
-        context_path = Path(self.data_dir) / "context.json"
-        
-        if context_path.exists():
-            try:
-                with open(context_path, "r", encoding="utf-8") as f:
-                    context_data = json.load(f)
-                
-                self._context = GlobalContext.from_dict(context_data)
-                logger.info("Loaded existing context")
-            except Exception as e:
-                logger.error(f"Error loading context: {str(e)}")
-                # Initialize with empty context
-                self._context = GlobalContext()
-        else:
-            logger.info("No existing context found, initializing empty context")
-            self._context = GlobalContext()
+    def _initialize_data_dir(self) -> None:
+        """Initialize the data directory."""
+        try:
+            os.makedirs(self.data_dir, exist_ok=True)
+            logger.debug(f"Initialized context data directory: {self.data_dir}")
+        except Exception as e:
+            logger.error(f"Failed to initialize context data directory: {str(e)}")
     
     def get_context(self) -> GlobalContext:
         """
@@ -80,178 +51,240 @@ class ContextRepository:
         Returns:
             The current global context
         """
+        if self._context is None:
+            # Try to load from file
+            self._context = self._load_context()
+            
+            # If still None, create a new empty context
+            if self._context is None:
+                self._context = GlobalContext()
+                self.save_context()
+        
         return self._context
     
-    def save_context(self):
+    def save_context(self) -> bool:
         """
-        Save the current context to disk.
+        Save the current global context to file.
         
-        This method saves the current context to the main context file
-        and also creates a versioned copy in the history directory.
+        Returns:
+            True if successful, False otherwise
+        """
+        if self._context is None:
+            logger.warning("No context to save")
+            return False
+        
+        try:
+            context_path = Path(self.data_dir) / "global_context.json"
+            
+            # Create directory if it doesn't exist
+            os.makedirs(self.data_dir, exist_ok=True)
+            
+            # Update the timestamp
+            self._context.last_updated = datetime.now()
+            
+            # Save to file
+            with open(context_path, "w") as f:
+                json.dump(self._context.to_dict(), f, indent=2)
+            
+            logger.info(f"Saved global context to {context_path}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to save global context: {str(e)}")
+            return False
+    
+    def _load_context(self) -> Optional[GlobalContext]:
+        """
+        Load global context from file.
+        
+        Returns:
+            The loaded global context, or None if not found or error
         """
         try:
-            # Convert to dictionary
-            context_data = self._context.to_dict()
+            context_path = Path(self.data_dir) / "global_context.json"
             
-            # Save to main context file
-            context_path = Path(self.data_dir) / "context.json"
-            with open(context_path, "w", encoding="utf-8") as f:
-                json.dump(context_data, f, indent=2)
+            if not context_path.exists():
+                logger.info(f"No existing context file found at {context_path}")
+                return None
             
-            # Save to history with timestamp
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            history_path = Path(self.data_dir) / "history" / f"context_{timestamp}.json"
-            with open(history_path, "w", encoding="utf-8") as f:
-                json.dump(context_data, f, indent=2)
+            # Load from file
+            with open(context_path, "r") as f:
+                context_data = json.load(f)
             
-            logger.info(f"Saved context to {context_path} and {history_path}")
+            # Create context object
+            context = GlobalContext()
+            
+            # Set basic fields
+            for field in ["product_name", "product_description", "primary_purpose"]:
+                if field in context_data:
+                    setattr(context, field, context_data[field])
+            
+            # Set list fields
+            if "target_audience" in context_data:
+                context.target_audience = context_data["target_audience"]
+            
+            # Set dictionary fields
+            if "terminology" in context_data:
+                context.terminology = context_data["terminology"]
+            
+            if "categories" in context_data:
+                context.categories = context_data["categories"]
+            
+            # Set features
+            if "main_features" in context_data:
+                for name, feature_data in context_data["main_features"].items():
+                    feature = ProductFeature(
+                        name=name,
+                        description=feature_data.get("description", ""),
+                        importance=feature_data.get("importance", 5),
+                        related_features=feature_data.get("related_features", [])
+                    )
+                    context.main_features[name] = feature
+            
+            # Set other fields
+            if "confidence_score" in context_data:
+                context.confidence_score = float(context_data["confidence_score"])
+            
+            if "is_fallback" in context_data:
+                context.is_fallback = bool(context_data["is_fallback"])
+            
+            logger.info(f"Loaded global context from {context_path}")
+            return context
         except Exception as e:
-            logger.error(f"Error saving context: {str(e)}")
+            logger.error(f"Failed to load global context: {str(e)}")
+            return None
     
-    def update_context(self, new_context: GlobalContext, document_path: str) -> ContextEnrichment:
+    def update_context(self, new_context: GlobalContext, source_document: str) -> ContextEnrichment:
         """
-        Update the current context with new information.
-        
-        This method merges the new context with the existing one,
-        tracking what was added or modified.
+        Update the global context with new information.
         
         Args:
-            new_context: New context to merge
-            document_path: Path to the document that triggered the update
+            new_context: New context information to integrate
+            source_document: Path to the document that provided this enrichment
             
         Returns:
-            Record of what was changed in the context
+            Record of what was changed in the update
         """
-        # Initialize enrichment record
-        enrichment = ContextEnrichment(document_path=document_path)
+        if self._context is None:
+            self._context = new_context
+            enrichment = ContextEnrichment(
+                added_features=set(new_context.main_features.keys()),
+                added_terminology=set(new_context.terminology.keys()),
+                confidence_delta=new_context.confidence_score,
+                source_document=source_document
+            )
+            self.save_context()
+            return enrichment
         
-        # Update product information if more confident
-        if (new_context.confidence_score > self._context.confidence_score and 
-            new_context.product_name):
-            old_confidence = self._context.confidence_score
-            
-            # Update basic fields
-            self._context.product_name = new_context.product_name
-            self._context.product_description = new_context.product_description
-            self._context.primary_purpose = new_context.primary_purpose
-            self._context.target_audience = new_context.target_audience
-            self._context.confidence_score = new_context.confidence_score
-            
-            # Record confidence change
-            enrichment.confidence_change = self._context.confidence_score - old_confidence
+        # Track changes
+        enrichment = ContextEnrichment(source_document=source_document)
         
-        # Update features
+        # Update basic fields if they're better
+        current_score = self._context.confidence_score or 0.0
+        new_score = new_context.confidence_score or 0.0
+        
+        # If the new context is significantly more confident, prefer its values
+        if new_score > current_score + 0.2:
+            if new_context.product_name:
+                self._context.product_name = new_context.product_name
+            
+            if new_context.product_description:
+                self._context.product_description = new_context.product_description
+            
+            if new_context.primary_purpose:
+                self._context.primary_purpose = new_context.primary_purpose
+            
+            # Combine target audiences
+            for audience in new_context.target_audience:
+                if audience not in self._context.target_audience:
+                    self._context.target_audience.append(audience)
+        
+        # Always update confidence score as the max of both
+        old_confidence = self._context.confidence_score
+        self._context.confidence_score = max(self._context.confidence_score, 
+                                           new_context.confidence_score)
+        enrichment.confidence_delta = self._context.confidence_score - old_confidence
+        
+        # Merge features
         for name, feature in new_context.main_features.items():
             if name in self._context.main_features:
-                # Feature exists, check if we should update
+                # Update existing feature if new one is higher importance
                 existing = self._context.main_features[name]
-                updated = False
-                
-                # Use longer description
-                if len(feature.description) > len(existing.description):
-                    existing.description = feature.description
-                    updated = True
-                
-                # Use higher importance if provided
                 if feature.importance > existing.importance:
+                    existing.description = feature.description
                     existing.importance = feature.importance
-                    updated = True
+                    enrichment.updated_features.add(name)
                 
-                # Merge related features
-                if feature.related_features:
-                    old_related = set(existing.related_features)
-                    new_related = set(feature.related_features)
-                    if old_related != new_related:
-                        existing.related_features = list(old_related.union(new_related))
-                        updated = True
-                
-                if updated:
-                    enrichment.modified_features.append(name)
+                # Always merge related features
+                for related in feature.related_features:
+                    if related not in existing.related_features:
+                        existing.related_features.append(related)
             else:
-                # New feature, add it
+                # Add new feature
                 self._context.main_features[name] = feature
-                enrichment.added_features.append(name)
+                enrichment.added_features.add(name)
         
-        # Update terminology
+        # Merge terminology
         for term, definition in new_context.terminology.items():
             if term in self._context.terminology:
-                # Term exists, check if we should update
+                # Update if new definition is longer and better
                 existing_def = self._context.terminology[term]
-                if len(definition) > len(existing_def):
+                if len(definition) > len(existing_def) * 1.2:  # 20% longer
                     self._context.terminology[term] = definition
-                    enrichment.modified_terminology.append(term)
+                    enrichment.updated_terminology.add(term)
             else:
-                # New term, add it
+                # Add new term
                 self._context.terminology[term] = definition
-                enrichment.added_terminology.append(term)
-        
-        # Update categories
-        for category, description in new_context.categories.items():
-            self._context.categories[category] = description
+                enrichment.added_terminology.add(term)
         
         # Save the updated context
         self.save_context()
         
         return enrichment
     
-    def get_context_history(self) -> List[Dict[str, Any]]:
+    def get_enrichment_history(self) -> List[Dict[str, Any]]:
         """
-        Get the history of context changes.
+        Get the history of context enrichments.
         
         Returns:
-            List of context versions with timestamps
+            List of enrichment records
         """
-        history = []
-        history_dir = Path(self.data_dir) / "history"
-        
-        if history_dir.exists():
-            # Get all history files
-            history_files = sorted(history_dir.glob("context_*.json"))
+        try:
+            history_path = Path(self.data_dir) / "enrichment_history.json"
             
-            # Process each file
-            for file_path in history_files:
-                try:
-                    # Extract timestamp from filename
-                    timestamp_str = file_path.stem.split("_", 1)[1]
-                    timestamp = datetime.strptime(timestamp_str, "%Y%m%d_%H%M%S")
-                    
-                    # Load context data
-                    with open(file_path, "r", encoding="utf-8") as f:
-                        context_data = json.load(f)
-                    
-                    # Add to history
-                    history.append({
-                        "timestamp": timestamp.isoformat(),
-                        "filename": file_path.name,
-                        "context": context_data
-                    })
-                except Exception as e:
-                    logger.error(f"Error loading history file {file_path}: {str(e)}")
-        
-        return history
+            if not history_path.exists():
+                return []
+            
+            with open(history_path, "r") as f:
+                return json.load(f)
+        except Exception as e:
+            logger.error(f"Failed to load enrichment history: {str(e)}")
+            return []
     
-    def get_context_version(self, version_id: str) -> Optional[GlobalContext]:
+    def add_enrichment_to_history(self, enrichment: ContextEnrichment) -> None:
         """
-        Get a specific version of the context.
+        Add an enrichment record to the history.
         
         Args:
-            version_id: Version identifier (timestamp)
-            
-        Returns:
-            The context version, or None if not found
+            enrichment: The enrichment record to add
         """
-        history_dir = Path(self.data_dir) / "history"
-        version_path = history_dir / f"context_{version_id}.json"
+        if not enrichment.has_changes():
+            return  # No changes to record
         
-        if version_path.exists():
-            try:
-                with open(version_path, "r", encoding="utf-8") as f:
-                    context_data = json.load(f)
-                
-                return GlobalContext.from_dict(context_data)
-            except Exception as e:
-                logger.error(f"Error loading context version {version_id}: {str(e)}")
-                return None
-        else:
-            logger.warning(f"Context version {version_id} not found")
-            return None
+        try:
+            # Get existing history
+            history = self.get_enrichment_history()
+            
+            # Add new record
+            history.append({
+                "timestamp": datetime.now().isoformat(),
+                "enrichment": enrichment.to_dict()
+            })
+            
+            # Save updated history
+            history_path = Path(self.data_dir) / "enrichment_history.json"
+            with open(history_path, "w") as f:
+                json.dump(history, f, indent=2)
+            
+            logger.info("Added enrichment to history")
+        except Exception as e:
+            logger.error(f"Failed to add enrichment to history: {str(e)}")

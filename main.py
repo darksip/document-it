@@ -67,6 +67,16 @@ def setup_arg_parser():
         help="Generate implementation guidelines from analysis results"
     )
     parser.add_argument(
+        "--test-context",
+        action="store_true",
+        help="Output detailed context extraction information"
+    )
+    parser.add_argument(
+        "--visualize-context-extraction",
+        action="store_true",
+        help="Generate a visualization of the context extraction process"
+    )
+    parser.add_argument(
         "--verbose", 
         action="store_true", 
         help="Enable verbose logging"
@@ -78,25 +88,6 @@ def get_root_page_url(document_url: str) -> str:
     """Extract root page URL from a document URL."""
     parsed_url = urlparse(document_url)
     return f"{parsed_url.scheme}://{parsed_url.netloc}"
-
-
-def extract_text_from_html(html_content: bytes) -> str:
-    """Extract text content from HTML."""
-    try:
-        # Try to import BeautifulSoup
-        from bs4 import BeautifulSoup
-        soup = BeautifulSoup(html_content, 'html.parser')
-        # Get text content and remove excessive whitespace
-        text_content = re.sub(r'\s+', ' ', soup.get_text()).strip()
-        return text_content
-    except ImportError:
-        # Fallback if BeautifulSoup is not available
-        logger.warning("BeautifulSoup not available, using basic HTML text extraction")
-        # Basic HTML tag removal (not as good as BeautifulSoup)
-        text = html_content.decode('utf-8', errors='ignore')
-        text = re.sub(r'<[^>]+>', ' ', text)
-        text = re.sub(r'\s+', ' ', text).strip()
-        return text
 
 
 def main():
@@ -136,16 +127,118 @@ def main():
             try:
                 root_filename, root_content = download_file(root_page_url, session=session)
                 
-                # Extract text content
-                if root_filename.endswith((".html", ".htm")):
-                    text_content = extract_text_from_html(root_content)
+                # Convert content to string if it's bytes
+                if isinstance(root_content, bytes):
+                    root_content_str = root_content.decode('utf-8', errors='ignore')
                 else:
-                    # Use the content directly if not HTML
-                    text_content = root_content.decode('utf-8', errors='ignore')
+                    root_content_str = root_content
                 
                 # Initialize global context
-                context_manager.initialize_from_root_page(text_content)
-                logger.info("Initialized global context from root page")
+                context = context_manager.initialize_from_root_page(root_content_str)
+                logger.info(f"Initialized global context with confidence score: {context.confidence_score:.2f}")
+                
+                # Output detailed context information if requested
+                if args.test_context or args.visualize_context_extraction:
+                    # Create output directory for context
+                    context_output_dir = Path("data/output/context")
+                    context_output_dir.mkdir(parents=True, exist_ok=True)
+                    
+                    # Save the context summary
+                    context_summary = context_manager.export_context_summary()
+                    context_summary_path = context_output_dir / "global_context_summary.md"
+                    with open(context_summary_path, "w") as f:
+                        f.write(context_summary)
+                    logger.info(f"Exported global context summary to {context_summary_path}")
+                    
+                    # Save the raw context data for debugging
+                    context_debug_path = context_output_dir / "global_context_debug.json"
+                    with open(context_debug_path, "w") as f:
+                        json.dump(context.to_dict(), f, indent=2)
+                    logger.info(f"Exported context debug info to {context_debug_path}")
+                    
+                    # Save the original HTML for reference
+                    html_path = context_output_dir / "root_page.html"
+                    with open(html_path, "w") as f:
+                        f.write(root_content_str)
+                    logger.info(f"Saved original HTML to {html_path}")
+                    
+                    # If visualization is requested, create a visualization of the extraction process
+                    if args.visualize_context_extraction:
+                        from document_it.context.html_parser import parse_html_with_structure
+                        
+                        # Parse the HTML
+                        document = parse_html_with_structure(root_content_str)
+                        
+                        # Create a visualization file
+                        vis_path = context_output_dir / "context_extraction_process.md"
+                        with open(vis_path, "w") as f:
+                            f.write("# Context Extraction Process\n\n")
+                            
+                            # Step 1: HTML Structure
+                            f.write("## 1. HTML Structure Extraction\n\n")
+                            f.write("The first step is to parse the HTML and extract its structure.\n\n")
+                            f.write("### Document Title\n")
+                            f.write(f"`{document.title}`\n\n")
+                            
+                            f.write("### Metadata\n")
+                            f.write("```json\n")
+                            f.write(json.dumps(document.metadata, indent=2))
+                            f.write("\n```\n\n")
+                            
+                            f.write("### Headings\n")
+                            for heading in document.headings[:10]:  # Limit to first 10
+                                f.write(f"- Level {heading.level}: {heading.text}\n")
+                            if len(document.headings) > 10:
+                                f.write(f"- ... and {len(document.headings) - 10} more\n")
+                            f.write("\n")
+                            
+                            # Step 2: Content Prioritization
+                            f.write("## 2. Content Prioritization\n\n")
+                            f.write("Next, the content is prioritized to identify the most important sections.\n\n")
+                            
+                            from document_it.context.content_prioritizer import prioritize_content
+                            prioritized_sections = prioritize_content(document)
+                            
+                            f.write("### Top Sections\n")
+                            for i, section in enumerate(prioritized_sections[:5]):
+                                f.write(f"#### {i+1}. {section.heading or 'Unnamed Section'}\n")
+                                f.write(f"Relevance Score: {section.relevance_score:.2f}\n\n")
+                                content_preview = section.content[:200] + "..." if len(section.content) > 200 else section.content
+                                f.write(f"{content_preview}\n\n")
+                            
+                            # Step 3: LLM Analysis
+                            f.write("## 3. LLM-Based Semantic Analysis\n\n")
+                            f.write("The LLM analyzes the structured content to extract meaningful context.\n\n")
+                            
+                            f.write("### Product Information\n")
+                            f.write(f"- **Name**: {context.product_name}\n")
+                            f.write(f"- **Description**: {context.product_description}\n")
+                            f.write(f"- **Primary Purpose**: {context.primary_purpose}\n")
+                            f.write("- **Target Audience**: " + ", ".join(context.target_audience) + "\n\n")
+                            
+                            f.write("### Features\n")
+                            for name, feature in context.main_features.items():
+                                f.write(f"- **{name}** (Importance: {feature.importance}/10): {feature.description[:100]}...\n")
+                            f.write("\n")
+                            
+                            f.write("### Terminology\n")
+                            for term, definition in list(context.terminology.items())[:5]:
+                                f.write(f"- **{term}**: {definition[:100]}...\n")
+                            if len(context.terminology) > 5:
+                                f.write(f"- ... and {len(context.terminology) - 5} more terms\n")
+                            f.write("\n")
+                            
+                            # Step 4: Markdown Generation
+                            f.write("## 4. Markdown Narrative Generation\n\n")
+                            f.write("Finally, a cohesive markdown narrative is generated to tell the story of the product.\n\n")
+                            
+                            f.write("```markdown\n")
+                            f.write(context.context_markdown[:1000])  # First 1000 chars
+                            f.write("\n...\n```\n\n")
+                            
+                            f.write("The full narrative is available in [global_context_summary.md](global_context_summary.md).\n")
+                        
+                        logger.info(f"Created context extraction visualization at {vis_path}")
             except Exception as e:
                 logger.warning(f"Failed to initialize global context from root page: {str(e)}")
                 logger.info("Proceeding without global context")
@@ -238,7 +331,7 @@ def main():
             # Export global context summary if available
             try:
                 context_summary = context_manager.export_context_summary()
-                context_summary_path = Path("data/output/global_context_summary.md")
+                context_summary_path = Path("data/output/guidelines/global_context.md")
                 with open(context_summary_path, "w") as f:
                     f.write(context_summary)
                 logger.info(f"Exported global context summary to {context_summary_path}")

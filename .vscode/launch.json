@@ -1,0 +1,117 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        },
+        {
+            "name": "Current File with UV",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "uv",
+            "args": [
+                "run",
+                "python",
+                "${file}"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Test Context Extraction",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/test_context_extraction.py",
+            "args": [
+                "--html-file",
+                "test_data/product_page.html",
+                "--debug"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        },
+        {
+            "name": "Test Context Extraction (Direct Workflow)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/test_context_extraction.py",
+            "args": [
+                "--html-file",
+                "test_data/product_page.html",
+                "--debug",
+                "--direct-workflow"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        },
+        {
+            "name": "Test Context Extraction (Verbose Debug)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/test_context_extraction.py",
+            "args": [
+                "--html-file",
+                "test_data/product_page.html",
+                "--verbose-debug",
+                "--direct-workflow"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        },
+        {
+            "name": "Test Context Extraction (URL)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/test_context_extraction.py",
+            "args": [
+                "--url",
+                "https://docs.agno.com/",
+                "--debug"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        },
+        {
+            "name": "Test Context Extraction (Visualize)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/test_context_extraction.py",
+            "args": [
+                "--html-file",
+                "test_data/product_page.html",
+                "--debug",
+                "--visualize"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        }
+    ]
+}

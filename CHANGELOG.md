@@ -1,6 +1,31 @@
 # Changelog
 
-All notable changes to the Document-it project will be documented in this file.
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [1.2.0] - 2025-03-08
+
+**Commit Summary**: Added global context extraction system to maintain product awareness across deep links in documentation analysis. This ensures consistent understanding of the product's purpose, features, and terminology throughout the documentation tree, even when analyzing individual sections.
+
+### Added
+- Global context extraction system for maintaining context across deep links
+- HTML structure parser for converting HTML into structured documents
+- Content prioritization system to identify key sections in documentation
+- LangGraph-based extraction workflow for semantic analysis
+- Context manager for initializing and updating global context
+- Context repository for persistent storage of global context
+- Debug utilities for troubleshooting extraction issues
+- Test script with multiple testing options
+
+### Fixed
+- Issue where deep links lost context of the global subject
+- LangGraph workflow state preservation between nodes
+- Pydantic v2 compatibility issues in model serialization
+
 
 ## [1.2.0] - 2025-03-08
 
