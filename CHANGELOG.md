@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.1] - 2025-03-08
+
+**Commit Summary**: Fixed vector search functionality to properly handle PostgreSQL pgvector operations and improve error handling.
+
+### Fixed
+- Vector search SQL query syntax for pgvector compatibility
+- Improved error handling in document and chunk search functions
+- Fixed document ID matching in search results
+- Enhanced result handling to prevent KeyError exceptions
+- Added robust transaction management for database operations
+
+## [1.5.0] - 2025-03-08
+
+**Commit Summary**: Implemented PostgreSQL database integration with pgvector for document storage and semantic search capabilities. This enables efficient document crawling with change detection, vector-based semantic search, and improved scalability for large documentation sets.
+
+### Added
+- PostgreSQL database integration with pgvector extension
+  - Document storage with MD5 hash-based change detection
+  - Vector embeddings for semantic search
+  - Document chunking for fine-grained search
+  - Relationship tracking between documents
+  - Crawl session management
+- Docker Compose configuration for local development
+  - PostgreSQL with pgvector extension
+  - pgAdmin for database management
+  - Initialization scripts and volume configuration
+- Enhanced web crawler
+  - Systematic crawling with configurable depth
+  - Politeness controls and rate limiting
+  - Resumable crawling sessions
+  - Progress tracking and reporting
+- Vector search capabilities
+  - Document-level and chunk-level semantic search
+  - Hybrid search combining vector and keyword approaches
+  - Similarity-based document relationship discovery
+  - Configurable search parameters and filters
+
+### Changed
+- Updated project dependencies to include database requirements
+- Enhanced environment configuration with database settings
+- Updated README with database and vector search documentation
+- Added comprehensive test scripts for database and vector search functionality
+
 ## [1.4.0] - 2025-03-08
 
 **Commit Summary**: Enhanced project documentation and validated parallelization system with comprehensive testing. Added CONTRIBUTING.md for public repository, updated README with improved design, and created detailed test suite for parallelization performance validation.

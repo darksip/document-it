@@ -51,6 +51,14 @@ graph TD
     I --> J[Context Repository]
     end
 
+    subgraph "Database System"
+    DB[PostgreSQL + pgvector]
+    VS[Vector Search Engine] 
+    EG[Embedding Generator]
+    DB <--> VS
+    EG --> DB
+    end
+
     subgraph "Parallelization System"
     E --> K[Async Processing]
     E --> L[Parallel Processing]
@@ -58,11 +66,18 @@ graph TD
     E --> N[Job Queue System]
     end
     
+    A --> DB
+    D --> DB
+    E --> VS
+    F --> VS
+    
     classDef core fill:#f9f,stroke:#333,stroke-width:2px
     classDef context fill:#bbf,stroke:#333,stroke-width:2px
+    classDef database fill:#bfb,stroke:#333,stroke-width:2px
     
     class A,B,D,E,F core
     class C,G,H,I,J context
+    class DB,VS,EG database
 ```
 
 ## Features
@@ -102,6 +117,20 @@ graph TD
   - Batch processing optimization with dynamic sizing
   - Scalable job queue system for large document sets
 
+- **PostgreSQL Database**: Store and manage crawled documentation
+  - Content hashing (MD5) to avoid re-processing unchanged documents
+  - Efficient storage of document content and metadata
+  - Structured storage of analysis results
+  - Document relationships tracking
+  - Crawl session management
+
+- **Vector Search**: Semantic search capabilities using pgvector
+  - Document embedding generation and storage
+  - Semantic similarity search across documentation
+  - Chunked document retrieval for precise results
+  - Hybrid search combining keyword and semantic approaches
+  - Relationship discovery based on content similarity
+
 - **Report Generator**: Create implementation guidelines from analysis results
   - Markdown document generation
   - Topic guideline generation with structured sections
@@ -118,6 +147,9 @@ cd document-it
 
 # Install dependencies using UV (as required by project standards)
 uv sync
+
+# Start the PostgreSQL database with Docker (if using database features)
+docker-compose up -d
 ```
 
 ## Configuration
@@ -133,6 +165,19 @@ LANGGRAPH_TRACING_V2=true
 
 # Logging Level
 LOG_LEVEL=INFO
+
+# PostgreSQL Configuration (if using database features)
+DATABASE_URL=postgresql://document_it_user:${POSTGRES_PASSWORD}@localhost:5432/document_it
+POSTGRES_PASSWORD=secure_password
+PGADMIN_EMAIL=admin@document-it.com
+PGADMIN_PASSWORD=admin_password
+
+# Vector Search Configuration
+EMBEDDING_MODEL=text-embedding-3-large
+EMBEDDING_DIMENSION=3072
+CHUNK_SIZE=1000
+CHUNK_OVERLAP=200
+VECTOR_SEARCH_TOP_K=5
 ```
 
 ## Usage
@@ -172,6 +217,22 @@ uv run python main.py --parallelism-mode async --analysis-workers 5
 
 # Use job queue for large document sets
 uv run python main.py --enable-queue --analysis-workers 5 --analyze-count 20
+```
+
+### Database and Vector Search Options
+
+```bash
+# Use database to store documents and analysis
+uv run python main.py --use-database
+
+# Force reprocessing of all documents
+uv run python main.py --use-database --reprocess-all
+
+# Use vector search for semantic queries
+uv run python main.py --use-database --vector-search --embedding-model text-embedding-3-large
+
+# Crawl documents with depth control
+uv run python main.py --use-database --crawl-depth 3
 ```
 
 ### Example Scenarios
@@ -215,6 +276,17 @@ This will:
 - Create a visualization of the context extraction process
 - Results will be in data/output/context/
 
+**Scenario 5: Database-based crawling with vector search**
+```bash
+uv run python main.py --use-database --vector-search --crawl-depth 3 --root-page https://agno.com/product
+```
+This will:
+- Start a crawl from the root page up to depth 3
+- Store documents, content, and metadata in PostgreSQL
+- Generate vector embeddings for semantic search
+- Skip unchanged documents based on MD5 hashing
+- Enable semantic search across all crawled content
+
 ## Command-line Options
 
 | Option | Description | Default |
@@ -232,6 +304,11 @@ This will:
 | `--generate-guidelines` | Generate implementation guidelines | False |
 | `--test-context` | Output detailed context extraction information | False |
 | `--visualize-context-extraction` | Generate a visualization of the context extraction process | False |
+| `--use-database` | Use PostgreSQL database for document storage | True |
+| `--reprocess-all` | Reprocess all documents regardless of content hash | False |
+| `--crawl-depth` | Maximum depth for web crawler | 3 |
+| `--vector-search` | Enable vector-based semantic search | True |
+| `--embedding-model` | Model to use for generating embeddings | text-embedding-3-large |
 | `--verbose` | Enable verbose logging | False |
 
 ## Output Structure
@@ -258,6 +335,11 @@ data/
     │   ├── global_context_debug.json # Debug information about context extraction
     │   ├── root_page.html           # Original HTML of the root page
     │   └── context_extraction_process.md # Visualization of the extraction process
+    │
+    ├── vector_search/               # Vector search test results (when --vector-search is used)
+    │   ├── embeddings_stats.json    # Statistics about generated embeddings
+    │   ├── similarity_matrix.json   # Document similarity scores
+    │   └── sample_queries.md        # Sample semantic search queries and results
     │
     └── guidelines/                  # Generated guidelines (when --generate-guidelines is used)
         ├── global_context.md        # Global context summary

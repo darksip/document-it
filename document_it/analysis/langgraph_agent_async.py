@@ -320,7 +320,7 @@ async def aupdate_global_context(state: WorkflowState) -> WorkflowState:
                 # Update global context
                 # Note: This is potentially blocking, but we use asyncio.to_thread to avoid blocking the event loop
                 await asyncio.to_thread(
-                    lambda: ContextManager().update_from_document(
+                    lambda: ContextManager().update_from_text(
                         document_content=state["document_content"],
                         document_path=state["document_path"]
                     )
