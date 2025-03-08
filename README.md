@@ -1,39 +1,68 @@
-# Document-it
+# Document-it 📚✨
 
-[![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)](https://github.com/yourrepository/document-it)
+[![Version](https://img.shields.io/badge/version-1.5.1-blue.svg)](https://github.com/yourrepository/document-it)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/python-3.11+-yellow.svg)](https://www.python.org)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-blue.svg)](https://www.postgresql.org)
+[![pgvector](https://img.shields.io/badge/pgvector-0.5.0+-orange.svg)](https://github.com/pgvector/pgvector)
 
-A powerful tool to document LLMs by analyzing web documents with global context awareness.
+A powerful tool to document LLMs by analyzing web documents with global context awareness and vector search capabilities.
 
-## Table of Contents
+![Document-it Banner](https://via.placeholder.com/1200x300/4a90e2/ffffff?text=Document-it)
 
-- [Overview](#overview)
-- [Architecture](#architecture)
-- [Features](#features)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Usage](#usage)
+## ⚡ Quick Start
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/document-it.git
+cd document-it
+
+# Install dependencies using UV
+uv sync
+
+# Start database services (for vector search)
+docker-compose up -d
+
+# Run with default settings
+uv run python main.py
+
+# Or launch the Streamlit interface
+uv run python main.py --streamlit
+```
+
+## 📋 Table of Contents
+
+- [Overview](#-overview)
+- [Architecture](#-architecture)
+- [Features](#-features)
+- [Installation](#-installation)
+- [Configuration](#-configuration)
+- [Usage](#-usage)
   - [Basic Usage](#basic-usage)
-  - [Advanced Usage](#advanced-usage)
+  - [Parallelization Options](#parallelization-options)
+  - [Database and Vector Search Options](#database-and-vector-search-options)
+  - [Streamlit Interface](#streamlit-interface)
   - [Example Scenarios](#example-scenarios)
-- [Command-line Options](#command-line-options)
-- [Output Structure](#output-structure)
-- [License](#license)
+- [Command-line Options](#-command-line-options)
+- [Output Structure](#-output-structure)
+- [Contributing](#-contributing)
+- [Troubleshooting](#-troubleshooting)
+- [License](#-license)
 
-## Overview
+## 🔍 Overview
 
-Document-it is a Python application that connects to websites, retrieves document references, analyzes them using LangGraph with GPT-4o, and generates implementation guidelines. What sets Document-it apart is its **global context extraction** capability, which maintains awareness of the product's purpose, features, and terminology throughout the documentation analysis, even when examining deep links or individual sections.
+Document-it is a Python application that connects to websites, retrieves document references, analyzes them using LangGraph with GPT-4o, and generates implementation guidelines. What sets Document-it apart is its **global context extraction** capability and **vector search functionality**, which maintains awareness of the product's purpose, features, and terminology throughout the documentation analysis, even when examining deep links or individual sections.
 
 The application follows these steps:
 1. Connect to a website and download a file containing document references
 2. Parse the file to extract document references
 3. Download and organize the referenced documents
 4. Extract global context from the product's root/landing page
-5. Analyze the documents with LangGraph + GPT-4o, maintaining global context awareness
-6. Generate comprehensive implementation guidelines in markdown format
+5. Generate vector embeddings for semantic search capabilities
+6. Analyze the documents with LangGraph + GPT-4o, maintaining global context awareness
+7. Generate comprehensive implementation guidelines in markdown format
 
-## Architecture
+## 🏗️ Architecture
 
 ```mermaid
 graph TD
@@ -66,6 +95,15 @@ graph TD
     E --> N[Job Queue System]
     end
     
+    subgraph "Streamlit Interface"
+    UI[Dashboard]
+    QM[Queue Monitor]
+    SI[Search Interface]
+    end
+    
+    N <--> QM
+    VS <--> SI
+    
     A --> DB
     D --> DB
     E --> VS
@@ -74,13 +112,15 @@ graph TD
     classDef core fill:#f9f,stroke:#333,stroke-width:2px
     classDef context fill:#bbf,stroke:#333,stroke-width:2px
     classDef database fill:#bfb,stroke:#333,stroke-width:2px
+    classDef ui fill:#fdb,stroke:#333,stroke-width:2px
     
     class A,B,D,E,F core
     class C,G,H,I,J context
     class DB,VS,EG database
+    class UI,QM,SI ui
 ```
 
-## Features
+## ✨ Features
 
 - **Web Connector**: Connect to websites and download files
   - Content type detection and filename extraction
@@ -138,7 +178,15 @@ graph TD
   - Index document generation with topic summaries
   - Context-aware guideline generation
 
-## Installation
+- **Streamlit Web Interface**: User-friendly interface for managing document processing
+  - Dashboard with system overview and metrics
+  - Process page for configuring and launching jobs
+  - Real-time queue monitoring with auto-refresh
+  - Search interface with semantic, facet, and hybrid search
+  - Settings management for system configuration
+  - Visualizations for job status and performance metrics
+
+## 📦 Installation
 
 ```bash
 # Clone the repository
@@ -148,11 +196,14 @@ cd document-it
 # Install dependencies using UV (as required by project standards)
 uv sync
 
+# Install Streamlit for the web interface
+uv pip install streamlit pandas plotly
+
 # Start the PostgreSQL database with Docker (if using database features)
 docker-compose up -d
 ```
 
-## Configuration
+## ⚙️ Configuration
 
 Create a `.env` file in the project root with the following content:
 
@@ -180,7 +231,7 @@ CHUNK_OVERLAP=200
 VECTOR_SEARCH_TOP_K=5
 ```
 
-## Usage
+## 🚀 Usage
 
 ### Basic Usage
 
@@ -194,32 +245,30 @@ uv run python -m document_it
 uv run python main.py
 ```
 
-### Advanced Usage
-
-Run with custom options to specify URL, analyze more documents, and generate guidelines:
-
-```bash
-# Analyze a specific URL with more documents
-uv run python main.py --url https://docs.agno.com/llms.txt --analyze-count 10 --generate-guidelines
-
-# Extract global context from a root page
-uv run python main.py --root-page https://agno.com/product --generate-guidelines
-
-# Test context extraction with visualization
-uv run python main.py --root-page https://agno.com/product --test-context --visualize-context-extraction
-```
-
 ### Parallelization Options
+
+Choose from multiple parallelization strategies to optimize performance:
 
 ```bash
 # Use async parallelization with 5 workers
 uv run python main.py --parallelism-mode async --analysis-workers 5
 
+# Use process-based parallelization for CPU-bound tasks
+uv run python main.py --parallelism-mode process --analysis-workers 8
+
+# Use hybrid parallelization (both async and process)
+uv run python main.py --parallelism-mode hybrid --analysis-workers 5
+
 # Use job queue for large document sets
 uv run python main.py --enable-queue --analysis-workers 5 --analyze-count 20
+
+# Use batch optimization for LLM API calls
+uv run python main.py --batch-size 4 --analysis-workers 8
 ```
 
 ### Database and Vector Search Options
+
+Leverage PostgreSQL and pgvector for advanced document management and semantic search:
 
 ```bash
 # Use database to store documents and analysis
@@ -231,9 +280,34 @@ uv run python main.py --use-database --reprocess-all
 # Use vector search for semantic queries
 uv run python main.py --use-database --vector-search --embedding-model text-embedding-3-large
 
+# Customize vector search parameters
+uv run python main.py --use-database --vector-search --chunk-size 1500 --chunk-overlap 250 --vector-search-top-k 10
+
 # Crawl documents with depth control
 uv run python main.py --use-database --crawl-depth 3
+
+# Run semantic search test script
+uv run python test_vector_search.py
 ```
+
+### Streamlit Interface
+
+Launch the Streamlit web interface for a user-friendly experience:
+
+```bash
+# Launch the Streamlit interface with default settings
+uv run python main.py --streamlit
+
+# Specify port and host
+uv run python main.py --streamlit --streamlit-port 8502 --streamlit-host 0.0.0.0
+```
+
+The Streamlit interface provides:
+- Dashboard with system overview and metrics
+- Process page for configuring and launching jobs
+- Real-time queue monitoring with auto-refresh
+- Search interface with semantic, facet, and hybrid search
+- Settings management for system configuration
 
 ### Example Scenarios
 
@@ -287,31 +361,164 @@ This will:
 - Skip unchanged documents based on MD5 hashing
 - Enable semantic search across all crawled content
 
-## Command-line Options
+**Scenario 6: Vector Search Testing and Optimization**
+```bash
+# Run vector search test suite
+uv run python test_vector_search.py
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--url` | URL of the llms.txt file | https://docs.agno.com/llms.txt |
-| `--root-page` | URL of the product's root/landing page for context extraction | (inferred from --url) |
-| `--output-dir` | Directory to store output files | data/output |
-| `--context-dir` | Directory to store global context data | data/context |
-| `--max-workers` | Maximum number of concurrent downloads | 5 |
-| `--analyze-count` | Number of documents to analyze | 3 |
-| `--parallelism-mode` | Parallelization mode (sync, async, process, hybrid) | async |
-| `--analysis-workers` | Number of parallel workers for document analysis | 3 |
-| `--batch-size` | Batch size for LLM operations (0 = automatic) | 0 |
-| `--enable-queue` | Enable job queue for processing | False |
-| `--generate-guidelines` | Generate implementation guidelines | False |
-| `--test-context` | Output detailed context extraction information | False |
-| `--visualize-context-extraction` | Generate a visualization of the context extraction process | False |
-| `--use-database` | Use PostgreSQL database for document storage | True |
-| `--reprocess-all` | Reprocess all documents regardless of content hash | False |
-| `--crawl-depth` | Maximum depth for web crawler | 3 |
-| `--vector-search` | Enable vector-based semantic search | True |
-| `--embedding-model` | Model to use for generating embeddings | text-embedding-3-large |
-| `--verbose` | Enable verbose logging | False |
+# Run vector search with customized parameters
+uv run python main.py --use-database --vector-search --embedding-model text-embedding-3-large --chunk-size 1500 --chunk-overlap 250 --vector-search-top-k 10
 
-## Output Structure
+# Regenerate embeddings for existing documents
+uv run python main.py --use-database --vector-search --regenerate-embeddings
+```
+
+**Scenario 7: Streamlit Web Interface**
+```bash
+# Launch the Streamlit interface
+uv run python main.py --streamlit
+
+# Launch on a specific port and host
+uv run python main.py --streamlit --streamlit-port 8502 --streamlit-host 0.0.0.0
+```
+This will:
+- Launch the Streamlit web interface
+- Provide a user-friendly way to manage document processing
+- Enable real-time monitoring of the job queue
+- Allow searching through processed documents
+
+## 🎮 Command-line Options
+
+<table>
+  <tr>
+    <th>Category</th>
+    <th>Option</th>
+    <th>Description</th>
+    <th>Default</th>
+  </tr>
+  <tr>
+    <td rowspan="4"><strong>Basic Options</strong></td>
+    <td><code>--url</code></td>
+    <td>URL of the llms.txt file</td>
+    <td>https://docs.agno.com/llms.txt</td>
+  </tr>
+  <tr>
+    <td><code>--root-page</code></td>
+    <td>URL of the product's root/landing page for context extraction</td>
+    <td>(inferred from --url)</td>
+  </tr>
+  <tr>
+    <td><code>--output-dir</code></td>
+    <td>Directory to store output files</td>
+    <td>data/output</td>
+  </tr>
+  <tr>
+    <td><code>--analyze-count</code></td>
+    <td>Number of documents to analyze</td>
+    <td>3</td>
+  </tr>
+  <tr>
+    <td rowspan="5"><strong>Parallelization</strong></td>
+    <td><code>--parallelism-mode</code></td>
+    <td>Parallelization mode (sync, async, process, hybrid)</td>
+    <td>async</td>
+  </tr>
+  <tr>
+    <td><code>--analysis-workers</code></td>
+    <td>Number of parallel workers for document analysis</td>
+    <td>3</td>
+  </tr>
+  <tr>
+    <td><code>--batch-size</code></td>
+    <td>Batch size for LLM operations (0 = automatic)</td>
+    <td>0</td>
+  </tr>
+  <tr>
+    <td><code>--enable-queue</code></td>
+    <td>Enable job queue for processing</td>
+    <td>False</td>
+  </tr>
+  <tr>
+    <td><code>--max-workers</code></td>
+    <td>Maximum number of concurrent downloads</td>
+    <td>5</td>
+  </tr>
+  <tr>
+    <td rowspan="7"><strong>Database & Vector Search</strong></td>
+    <td><code>--use-database</code></td>
+    <td>Use PostgreSQL database for document storage</td>
+    <td>True</td>
+  </tr>
+  <tr>
+    <td><code>--reprocess-all</code></td>
+    <td>Reprocess all documents regardless of content hash</td>
+    <td>False</td>
+  </tr>
+  <tr>
+    <td><code>--crawl-depth</code></td>
+    <td>Maximum depth for web crawler</td>
+    <td>3</td>
+  </tr>
+  <tr>
+    <td><code>--vector-search</code></td>
+    <td>Enable vector-based semantic search</td>
+    <td>True</td>
+  </tr>
+  <tr>
+    <td><code>--embedding-model</code></td>
+    <td>Model to use for generating embeddings</td>
+    <td>text-embedding-3-large</td>
+  </tr>
+  <tr>
+    <td><code>--chunk-size</code></td>
+    <td>Size of document chunks for vector search</td>
+    <td>1000</td>
+  </tr>
+  <tr>
+    <td><code>--chunk-overlap</code></td>
+    <td>Overlap between document chunks</td>
+    <td>200</td>
+  </tr>
+  <tr>
+    <td rowspan="4"><strong>Output Options</strong></td>
+    <td><code>--generate-guidelines</code></td>
+    <td>Generate implementation guidelines</td>
+    <td>False</td>
+  </tr>
+  <tr>
+    <td><code>--test-context</code></td>
+    <td>Output detailed context extraction information</td>
+    <td>False</td>
+  </tr>
+  <tr>
+    <td><code>--visualize-context-extraction</code></td>
+    <td>Generate a visualization of the context extraction process</td>
+    <td>False</td>
+  </tr>
+  <tr>
+    <td><code>--verbose</code></td>
+    <td>Enable verbose logging</td>
+    <td>False</td>
+  </tr>
+  <tr>
+    <td rowspan="3"><strong>Streamlit Interface</strong></td>
+    <td><code>--streamlit</code></td>
+    <td>Launch the Streamlit web interface</td>
+    <td>False</td>
+  </tr>
+  <tr>
+    <td><code>--streamlit-port</code></td>
+    <td>Port to run the Streamlit interface on</td>
+    <td>8501</td>
+  </tr>
+  <tr>
+    <td><code>--streamlit-host</code></td>
+    <td>Host to run the Streamlit interface on</td>
+    <td>localhost</td>
+  </tr>
+</table>
+
+## 📁 Output Structure
 
 ```
 data/
@@ -327,6 +534,9 @@ data/
 │
 ├── context/                         # Global context data
 │   └── context_repository.json      # Stored context information
+│
+├── settings/                        # Settings for the Streamlit interface
+│   └── streamlit_settings.json      # Persistent settings for the Streamlit interface
 │
 └── output/
     ├── analysis_*.json              # Analysis results for each document
@@ -347,6 +557,73 @@ data/
         └── index.md                 # Index of all guidelines
 ```
 
-## License
+## 👥 Contributing
+
+We welcome contributions to the Document-it project! Please see our [CONTRIBUTING.md](CONTRIBUTING.md) file for guidelines on how to contribute.
+
+Key contribution areas:
+- Bug fixes and feature enhancements
+- Documentation improvements
+- Test coverage expansion
+- UI/UX improvements for report visualization
+- New connector implementations for different documentation sources
+
+## 🔧 Troubleshooting
+
+### Database Connectivity Issues
+
+If you encounter database connectivity issues:
+
+```bash
+# Check if PostgreSQL container is running
+docker ps | grep postgres
+
+# Restart the PostgreSQL container
+docker-compose restart postgres
+
+# View database logs
+docker-compose logs postgres
+```
+
+### Vector Search Problems
+
+For vector search issues:
+
+```bash
+# Verify pgvector extension is installed
+docker-compose exec postgres psql -U document_it_user -d document_it -c "SELECT * FROM pg_extension WHERE extname = 'vector';"
+
+# Run the vector search test script to diagnose issues
+uv run python test_vector_search.py
+```
+
+### Performance Bottlenecks
+
+If you're experiencing slow performance:
+
+```bash
+# Try different parallelization modes
+uv run python main.py --parallelism-mode hybrid --analysis-workers 8 --batch-size 4
+
+# Enable performance monitoring
+uv run python main.py --verbose --monitor-performance
+```
+
+### Streamlit Interface Issues
+
+If you encounter issues with the Streamlit interface:
+
+```bash
+# Check if Streamlit is installed
+uv pip install streamlit
+
+# Run with verbose logging
+uv run python main.py --streamlit --verbose
+
+# Try a different port if 8501 is in use
+uv run python main.py --streamlit --streamlit-port 8502
+```
+
+## 📄 License
 
 MIT

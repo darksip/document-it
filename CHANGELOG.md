@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+**Commit Summary**: Implemented Streamlit web interface for real-time queue monitoring and database search capabilities. This provides a user-friendly way to launch processing jobs, monitor their status, and search through processed documents using semantic and facet-based approaches.
+
+### Added
+- Streamlit web interface with multiple pages:
+  - Dashboard with system overview and metrics
+  - Process page for configuring and launching document processing jobs
+  - Queue Monitor for real-time job queue visualization and management
+  - Search interface with semantic, facet, and hybrid search capabilities
+  - Settings page for system configuration
+- Real-time queue monitoring with auto-refresh
+- Semantic search using vector embeddings
+- Facet-based filtering by metadata, date, and URL
+- Hybrid search combining semantic and facet approaches
+- Job management (add, cancel, view details)
+- Settings persistence and management
+- Command-line options for launching the Streamlit interface
+
+### Changed
+- Updated main.py to support launching the Streamlit interface
+- Added streamlit_app.py entry point for the Streamlit interface
+- Enhanced job queue system with real-time monitoring capabilities
+
 ## [1.5.1] - 2025-03-08
 
 **Commit Summary**: Fixed vector search functionality to properly handle PostgreSQL pgvector operations and improve error handling.

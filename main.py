@@ -109,6 +109,23 @@ def setup_arg_parser():
         action="store_true",
         help="Enable job queue for processing (useful for large document sets)"
     )
+    # Add Streamlit interface options
+    parser.add_argument(
+        "--streamlit",
+        action="store_true",
+        help="Launch the Streamlit interface"
+    )
+    parser.add_argument(
+        "--streamlit-port",
+        type=int,
+        default=8501,
+        help="Port to run the Streamlit interface on (default: 8501)"
+    )
+    parser.add_argument(
+        "--streamlit-host",
+        default="localhost",
+        help="Host to run the Streamlit interface on (default: localhost)"
+    )
     return parser
 
 
@@ -123,6 +140,23 @@ def main():
     """Main entry point for the application."""
     parser = setup_arg_parser()
     args = parser.parse_args()
+    
+    # Check if Streamlit interface should be launched
+    if args.streamlit:
+        logger.info("Launching Streamlit interface")
+        
+        try:
+            from document_it.streamlit_app import main as streamlit_main
+            import sys
+            sys.argv = [
+                sys.argv[0],
+                "--port", str(args.streamlit_port),
+                "--host", args.streamlit_host
+            ]
+            return streamlit_main()
+        except Exception as e:
+            logger.error(f"Error launching Streamlit interface: {str(e)}")
+            return 1
     
     if args.verbose:
         logger.setLevel(logging.DEBUG)
