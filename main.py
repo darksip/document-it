@@ -5,12 +5,16 @@ Document-it: A tool to document LLMs by analyzing web documents.
 import argparse
 import logging
 import json
+import asyncio
 import sys
 import re
 from pathlib import Path
 from urllib.parse import urlparse
 
-from document_it.analysis import analyze_document_with_workflow, synthesize_topics
+from document_it.analysis import (analyze_document_with_workflow, synthesize_topics,
+                                 analyze_documents_batch_async, synthesize_topics_async)
+from document_it.analysis.parallel_manager import ParallelManager, ParallelismMode
+from document_it.core import process_documents_with_queue
 from document_it.parser import extract_urls_from_markdown, categorize_documents
 from document_it.reporting import generate_guidelines_from_analyses
 from document_it.processor import process_document_batch, create_document_index
@@ -81,6 +85,30 @@ def setup_arg_parser():
         action="store_true", 
         help="Enable verbose logging"
     )
+    # Add new parallelization options
+    parser.add_argument(
+        "--parallelism-mode",
+        choices=["sync", "async", "process", "hybrid"],
+        default="async",
+        help="Parallelization mode (default: async)"
+    )
+    parser.add_argument(
+        "--analysis-workers",
+        type=int,
+        default=3,
+        help="Number of parallel workers for document analysis (default: 3)"
+    )
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=0,
+        help="Batch size for LLM operations (0 = automatic) (default: 0)"
+    )
+    parser.add_argument(
+        "--enable-queue",
+        action="store_true",
+        help="Enable job queue for processing (useful for large document sets)"
+    )
     return parser
 
 
@@ -88,6 +116,7 @@ def get_root_page_url(document_url: str) -> str:
     """Extract root page URL from a document URL."""
     parsed_url = urlparse(document_url)
     return f"{parsed_url.scheme}://{parsed_url.netloc}"
+
 
 
 def main():
@@ -303,18 +332,26 @@ def main():
         # Get the document paths and URLs
         document_items = list(batch_result['document_paths'].items())[:analyze_count]
         
-        # Analyze each document
-        analyses = []
-        for document_url, document_path in document_items:
-            logger.info(f"Analyzing document: {document_path}")
-            analysis = analyze_document_with_workflow(document_path, document_url)
-            analyses.append(analysis)
-            
-            # Save the analysis result
-            analysis_path = Path(f"data/output/analysis_{Path(document_path).stem}.json")
-            with open(analysis_path, "w") as f:
-                json.dump(analysis, f, indent=2)
-            logger.info(f"Saved analysis to {analysis_path}")
+        # Process documents based on the selected mode
+        if args.enable_queue:
+            # Use the job queue system for processing
+            logger.info(f"Using job queue for document analysis with {args.analysis_workers} workers")
+            analyses = asyncio.run(
+                process_documents_with_queue(
+                    document_items,
+                    output_dir=str(output_dir),
+                    num_workers=args.analysis_workers,
+                    queue_dir="data/queue"
+                )
+            )
+        else:
+            # Use the parallel manager for processing
+            parallel_manager = ParallelManager(
+                mode=args.parallelism_mode,
+                max_workers=args.analysis_workers,
+                batch_size=args.batch_size
+            )
+            analyses = parallel_manager.process_documents(document_items, str(output_dir))
         
         logger.info(f"Successfully analyzed {len(analyses)} documents")
 
