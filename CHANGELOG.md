@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+**Commit Summary**: Added database administration tool with command-line interface for database management tasks. This tool provides utilities for resetting, checking, and maintaining the database, making it easier to manage the database during development and testing.
+
+### Added
+- Created `db_admin.py` with command-line interface for database management:
+  - `reset` command to drop and recreate all tables
+  - `status` command to check database connection and table statistics
+  - `vacuum` command to reclaim storage and optimize the database
+  - `init` command to initialize schema without dropping tables
+  - `truncate` command to clear data from specific tables
+- Added safety confirmations for destructive operations
+- Added detailed logging for all database operations
+
+## [Unreleased]
+
 **Commit Summary**: Fixed parameter name mismatch in global context update and created comprehensive issue tracking system. This ensures proper functioning of the global context updates during document analysis and provides a structured approach to tracking and resolving issues.
 
 ### Added
