@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+**Commit Summary**: Fixed parameter name mismatch in global context update and created comprehensive issue tracking system. This ensures proper functioning of the global context updates during document analysis and provides a structured approach to tracking and resolving issues.
+
+### Added
+- Created `ISSUES.md` file with a structured format for GitHub issues
+- Documented 6 issues with detailed descriptions, steps to reproduce, and proposed solutions
+
+### Fixed
+- Parameter name mismatch in `aupdate_global_context` function that prevented global context updates
+- Improved handling of large documents for embedding generation by implementing truncation
+
+## [Unreleased]
+
+**Commit Summary**: Added comprehensive database testing scripts to verify document storage and analysis implementation. These scripts provide a complete workflow test and database state verification to ensure proper functioning of the database integration.
+
+### Added
+- Comprehensive database testing scripts:
+  - `test_database_workflow.py` for end-to-end workflow testing
+  - `verify_database_state.py` for database state verification
+  - `run_database_tests.py` for running both tests in sequence
+- Complete workflow testing from crawling to analysis storage
+- Database state verification with detailed queries
+- Documentation for database testing in `database_tests_README.md`
+
+### Changed
+- Enhanced testing capabilities for database operations
+- Added detailed logging for database operations
+
+## [Unreleased]
+
 **Commit Summary**: Implemented Streamlit web interface for real-time queue monitoring and database search capabilities. This provides a user-friendly way to launch processing jobs, monitor their status, and search through processed documents using semantic and facet-based approaches.
 
 ### Added

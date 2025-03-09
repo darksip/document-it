@@ -1,0 +1,13 @@
+2025-03-08 23:04:30,285 - document-it.database - INFO - Database manager initialized with postgresql://document_it_user:****@localhost:5432/document_it
+2025-03-08 23:04:30,285 - document-it.verify-db - INFO - Starting database verification
+2025-03-08 23:04:30,285 - document-it.verify-db - INFO - Testing database connection
+2025-03-08 23:04:30,303 - document-it.verify-db - INFO - Checking pgvector extension
+2025-03-08 23:04:30,305 - document-it.verify-db - INFO - Getting document counts
+2025-03-08 23:04:30,306 - document-it.verify-db - INFO - Getting document status
+2025-03-08 23:04:30,307 - document-it.verify-db - INFO - Getting analysis counts
+2025-03-08 23:04:30,307 - document-it.verify-db - INFO - Getting embedding counts
+2025-03-08 23:04:30,308 - document-it.verify-db - INFO - Getting chunk counts
+2025-03-08 23:04:30,308 - document-it.verify-db - INFO - Getting document details
+2025-03-08 23:04:30,309 - document-it.verify-db - INFO - Getting analysis details
+2025-03-08 23:04:30,309 - document-it.verify-db - INFO - Database verification completed successfully
+2025-03-08 23:04:30,310 - document-it.verify-db - INFO - Database verification completed successfully

@@ -19,6 +19,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 from document_it.streamlit.utils.queue_adapter import queue_adapter
 from document_it.streamlit.components.settings_manager import get_setting
 from document_it.core.job_queue import Worker, WorkerPool
+from document_it.database.manager import DatabaseManager, DocumentRepository
 from document_it.web.connector import download_file
 
 # Initialize session state
@@ -136,6 +137,10 @@ if status["pending"] > 0:
             try:
                 # Import the necessary modules
                 from document_it.analysis.langgraph_agent_async import analyze_document_with_workflow_async
+
+                # Initialize the database manager
+                db_manager = DatabaseManager()
+                document_repo = DocumentRepository(db_manager)
                 
                 # Define a simple process function for demonstration
                 async def process_document(input_data):                    
@@ -162,6 +167,19 @@ if status["pending"] > 0:
                                 temp_path = os.path.join('data/temp', f"temp_{int(time.time())}.html")
                                 download_file(document_url, temp_path)
                                 
+                                # Read the content of the downloaded file
+                                with open(temp_path, 'r', encoding='utf-8') as f:
+                                    content = f.read()
+                                
+                                # Create a session
+                                session = db_manager.get_session()
+                                
+                                # Add the document to the database
+                                document = document_repo.create(session, url=document_url, content_hash="", processing_required=False)
+                                session.commit()
+                                
+                                st.success(f"Document added to database with ID: {document.id}")
+                                
                                 # Use the downloaded file path
                                 document_path = temp_path
                             except Exception as e:
@@ -178,6 +196,17 @@ if status["pending"] > 0:
                                 # Download the file
                                 temp_path = os.path.join('data/temp', f"temp_{int(time.time())}.html")
                                 download_file(document_path, temp_path)
+
+                                # Read the content of the downloaded file
+                                with open(temp_path, 'r', encoding='utf-8') as f:
+                                    content = f.read()
+                                
+                                # Create a session
+                                session = db_manager.get_session()
+                                
+                                # Add the document to the database
+                                document = document_repo.create(session, url=document_path, content_hash="", processing_required=False)
+                                session.commit()
                                 
                                 # Use the downloaded file path
                                 document_path = temp_path

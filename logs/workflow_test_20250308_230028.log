@@ -1,0 +1,121 @@
+2025-03-08 23:00:29,060 - document-it.database - INFO - Database manager initialized with postgresql://document_it_user:****@localhost:5432/document_it
+2025-03-08 23:00:29,079 - document-it.embedding-generator - INFO - Initialized OpenAI client for model text-embedding-3-large
+2025-03-08 23:00:29,079 - document-it.test-workflow - INFO - Starting workflow test
+2025-03-08 23:00:29,079 - document-it.test-workflow - INFO - Testing database connection
+2025-03-08 23:00:29,096 - document-it.test-workflow - INFO - Checking pgvector extension
+2025-03-08 23:00:29,097 - document-it.test-workflow - INFO - Crawling test URLs
+2025-03-08 23:00:29,445 - document-it.test-workflow - INFO - Crawling https://docs.python.org/3/library/asyncio.html
+2025-03-08 23:00:29,445 - document-it.web - INFO - Downloading file from https://docs.python.org/3/library/asyncio.html
+2025-03-08 23:00:29,720 - document-it.web - INFO - Successfully downloaded asyncio.html (21823 bytes)
+2025-03-08 23:00:29,742 - document-it.document-change-handler - INFO - Updated document https://docs.python.org/3/library/asyncio.html (hash: c423b8e2de545a38cb08ed2687e01c2d, changed: True)
+2025-03-08 23:00:29,742 - document-it.test-workflow - INFO - Successfully crawled and stored document: https://docs.python.org/3/library/asyncio.html
+2025-03-08 23:00:29,743 - document-it.test-workflow - INFO - Crawling https://docs.python.org/3/library/sqlite3.html
+2025-03-08 23:00:29,743 - document-it.web - INFO - Downloading file from https://docs.python.org/3/library/sqlite3.html
+2025-03-08 23:00:29,850 - document-it.web - INFO - Successfully downloaded sqlite3.html (315013 bytes)
+2025-03-08 23:00:29,880 - document-it.document-change-handler - INFO - Updated document https://docs.python.org/3/library/sqlite3.html (hash: b50c5c56d6466d6b2cff09d1ec5c5b99, changed: True)
+2025-03-08 23:00:29,880 - document-it.test-workflow - INFO - Successfully crawled and stored document: https://docs.python.org/3/library/sqlite3.html
+2025-03-08 23:00:29,881 - document-it.test-workflow - INFO - Crawling https://docs.python.org/3/library/pathlib.html
+2025-03-08 23:00:29,881 - document-it.web - INFO - Downloading file from https://docs.python.org/3/library/pathlib.html
+2025-03-08 23:00:29,984 - document-it.web - INFO - Successfully downloaded pathlib.html (245737 bytes)
+2025-03-08 23:00:30,008 - document-it.document-change-handler - INFO - Updated document https://docs.python.org/3/library/pathlib.html (hash: 52027dfd72dc4dfb0f2ccd38157a1db5, changed: True)
+2025-03-08 23:00:30,008 - document-it.test-workflow - INFO - Successfully crawled and stored document: https://docs.python.org/3/library/pathlib.html
+2025-03-08 23:00:30,009 - document-it.test-workflow - INFO - Verifying document storage
+2025-03-08 23:00:30,014 - document-it.test-workflow - INFO - Verified document storage for https://docs.python.org/3/library/asyncio.html
+2025-03-08 23:00:30,019 - document-it.test-workflow - INFO - Verified document storage for https://docs.python.org/3/library/sqlite3.html
+2025-03-08 23:00:30,023 - document-it.test-workflow - INFO - Verified document storage for https://docs.python.org/3/library/pathlib.html
+2025-03-08 23:00:30,023 - document-it.test-workflow - INFO - Generating embeddings
+2025-03-08 23:00:30,664 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2025-03-08 23:00:31,391 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2025-03-08 23:00:32,163 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2025-03-08 23:00:32,610 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2025-03-08 23:00:32,955 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2025-03-08 23:00:33,291 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2025-03-08 23:00:33,811 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2025-03-08 23:00:34,316 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2025-03-08 23:00:34,752 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2025-03-08 23:00:35,266 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2025-03-08 23:00:35,846 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2025-03-08 23:00:36,423 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2025-03-08 23:00:37,114 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2025-03-08 23:00:37,483 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2025-03-08 23:00:38,110 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2025-03-08 23:00:38,541 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2025-03-08 23:00:39,245 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2025-03-08 23:00:39,816 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2025-03-08 23:00:40,286 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2025-03-08 23:00:40,533 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2025-03-08 23:00:41,079 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2025-03-08 23:00:41,561 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2025-03-08 23:00:42,197 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2025-03-08 23:00:42,707 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2025-03-08 23:00:43,156 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2025-03-08 23:00:43,877 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2025-03-08 23:00:44,163 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2025-03-08 23:00:44,729 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2025-03-08 23:00:45,250 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2025-03-08 23:00:45,780 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2025-03-08 23:00:46,209 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2025-03-08 23:00:47,111 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2025-03-08 23:00:47,121 - document-it.test-workflow - INFO - Generated embeddings for document https://docs.python.org/3/library/asyncio.html
+2025-03-08 23:00:47,579 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 400 Bad Request"
+2025-03-08 23:00:47,582 - document-it.embedding-generator - ERROR - Error generating OpenAI embedding: Error code: 400 - {'error': {'message': "This model's maximum context length is 8192 tokens, however you requested 8865 tokens (8865 in your prompt; 0 for the completion). Please reduce your prompt; or completion length.", 'type': 'invalid_request_error', 'param': None, 'code': None}}
+2025-03-08 23:00:47,582 - document-it.test-workflow - ERROR - Error generating embeddings for https://docs.python.org/3/library/sqlite3.html: Error code: 400 - {'error': {'message': "This model's maximum context length is 8192 tokens, however you requested 8865 tokens (8865 in your prompt; 0 for the completion). Please reduce your prompt; or completion length.", 'type': 'invalid_request_error', 'param': None, 'code': None}}
+2025-03-08 23:00:47,829 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 400 Bad Request"
+2025-03-08 23:00:47,830 - document-it.embedding-generator - ERROR - Error generating OpenAI embedding: Error code: 400 - {'error': {'message': "This model's maximum context length is 8192 tokens, however you requested 9177 tokens (9177 in your prompt; 0 for the completion). Please reduce your prompt; or completion length.", 'type': 'invalid_request_error', 'param': None, 'code': None}}
+2025-03-08 23:00:47,830 - document-it.test-workflow - ERROR - Error generating embeddings for https://docs.python.org/3/library/pathlib.html: Error code: 400 - {'error': {'message': "This model's maximum context length is 8192 tokens, however you requested 9177 tokens (9177 in your prompt; 0 for the completion). Please reduce your prompt; or completion length.", 'type': 'invalid_request_error', 'param': None, 'code': None}}
+2025-03-08 23:00:47,836 - document-it.test-workflow - INFO - Verifying embedding storage
+2025-03-08 23:00:47,884 - document-it.test-workflow - INFO - Verified embedding storage for https://docs.python.org/3/library/asyncio.html: 2 embeddings, 62 chunks
+2025-03-08 23:00:47,885 - document-it.test-workflow - ERROR - No embeddings found for document 76cc0a7a-522c-485e-a0ae-e140b44d6f0a
+2025-03-08 23:00:47,886 - document-it.test-workflow - ERROR - No embeddings found for document f3487c96-68ac-47cd-aa3b-0dd929b49871
+2025-03-08 23:00:47,886 - document-it.test-workflow - INFO - Running document analysis
+2025-03-08 23:00:47,920 - document-it.context - INFO - Loaded global context from data/context/global_context.json
+2025-03-08 23:00:47,920 - document-it.analysis.async - INFO - Retrieved global context for document analysis
+2025-03-08 23:00:47,949 - document-it.analysis.async - INFO - Using context-aware document analysis
+2025-03-08 23:01:06,977 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-03-08 23:01:06,987 - document-it.analysis.async - INFO - Analyzed document: data/test_workflow/asyncio.html
+2025-03-08 23:01:07,026 - document-it.analysis.async - INFO - Using context-aware concept extraction
+2025-03-08 23:01:25,307 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-03-08 23:01:25,308 - document-it.analysis.async - INFO - Extracted 6 concepts from document
+2025-03-08 23:01:25,349 - document-it.analysis.async - INFO - Using context-aware implementation pattern extraction
+2025-03-08 23:01:43,119 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-03-08 23:01:43,122 - document-it.analysis.async - INFO - Extracted 4 implementation details from document
+2025-03-08 23:01:43,123 - document-it.analysis.async - WARNING - Failed to update global context: ContextManager.update_from_text() got an unexpected keyword argument 'document_content'
+2025-03-08 23:01:43,129 - document-it.test-workflow - INFO - Analyzed document https://docs.python.org/3/library/asyncio.html
+2025-03-08 23:01:43,140 - document-it.context - INFO - Loaded global context from data/context/global_context.json
+2025-03-08 23:01:43,140 - document-it.analysis.async - INFO - Retrieved global context for document analysis
+2025-03-08 23:01:43,179 - document-it.analysis.async - INFO - Using context-aware document analysis
+2025-03-08 23:02:11,491 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-03-08 23:02:11,494 - document-it.analysis.async - INFO - Analyzed document: data/test_workflow/sqlite3.html
+2025-03-08 23:02:11,538 - document-it.analysis.async - INFO - Using context-aware concept extraction
+2025-03-08 23:02:42,887 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-03-08 23:02:42,889 - document-it.analysis.async - INFO - Extracted 8 concepts from document
+2025-03-08 23:02:42,930 - document-it.analysis.async - INFO - Using context-aware implementation pattern extraction
+2025-03-08 23:03:09,101 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-03-08 23:03:09,102 - document-it.analysis.async - INFO - Extracted 6 implementation details from document
+2025-03-08 23:03:09,102 - document-it.analysis.async - WARNING - Failed to update global context: ContextManager.update_from_text() got an unexpected keyword argument 'document_content'
+2025-03-08 23:03:09,107 - document-it.test-workflow - INFO - Analyzed document https://docs.python.org/3/library/sqlite3.html
+2025-03-08 23:03:09,116 - document-it.context - INFO - Loaded global context from data/context/global_context.json
+2025-03-08 23:03:09,116 - document-it.analysis.async - INFO - Retrieved global context for document analysis
+2025-03-08 23:03:09,151 - document-it.analysis.async - INFO - Using context-aware document analysis
+2025-03-08 23:03:35,656 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-03-08 23:03:35,662 - document-it.analysis.async - INFO - Analyzed document: data/test_workflow/pathlib.html
+2025-03-08 23:03:35,707 - document-it.analysis.async - INFO - Using context-aware concept extraction
+2025-03-08 23:04:04,441 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-03-08 23:04:04,445 - document-it.analysis.async - INFO - Extracted 6 concepts from document
+2025-03-08 23:04:04,487 - document-it.analysis.async - INFO - Using context-aware implementation pattern extraction
+2025-03-08 23:04:29,983 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-03-08 23:04:29,986 - document-it.analysis.async - INFO - Extracted 6 implementation details from document
+2025-03-08 23:04:29,987 - document-it.analysis.async - WARNING - Failed to update global context: ContextManager.update_from_text() got an unexpected keyword argument 'document_content'
+2025-03-08 23:04:29,993 - document-it.test-workflow - INFO - Analyzed document https://docs.python.org/3/library/pathlib.html
+2025-03-08 23:04:29,997 - document-it.test-workflow - INFO - Verifying analysis storage
+2025-03-08 23:04:30,003 - document-it.test-workflow - INFO - Verified analysis storage for https://docs.python.org/3/library/asyncio.html: 2 analyses
+2025-03-08 23:04:30,005 - document-it.test-workflow - INFO - Verified analysis storage for https://docs.python.org/3/library/sqlite3.html: 2 analyses
+2025-03-08 23:04:30,008 - document-it.test-workflow - INFO - Verified analysis storage for https://docs.python.org/3/library/pathlib.html: 2 analyses
+2025-03-08 23:04:30,009 - document-it.test-workflow - INFO - Running verification queries
+2025-03-08 23:04:30,010 - document-it.test-workflow - INFO - Document counts by status: [(True, 3)]
+2025-03-08 23:04:30,012 - document-it.test-workflow - INFO - Analysis results by document: [('https://docs.python.org/3/library/pathlib.html', 2), ('https://docs.python.org/3/library/sqlite3.html', 2), ('https://docs.python.org/3/library/asyncio.html', 2)]
+2025-03-08 23:04:30,013 - document-it.test-workflow - INFO - Document change history: [('https://docs.python.org/3/library/pathlib.html', '52027dfd72dc4dfb0f2ccd38157a1db5', datetime.datetime(2025, 3, 8, 22, 0, 29, 990311), None), ('https://docs.python.org/3/library/sqlite3.html', 'b50c5c56d6466d6b2cff09d1ec5c5b99', datetime.datetime(2025, 3, 8, 22, 0, 29, 856918), None), ('https://docs.python.org/3/library/asyncio.html', 'c423b8e2de545a38cb08ed2687e01c2d', datetime.datetime(2025, 3, 8, 22, 0, 29, 733316), None)]
+2025-03-08 23:04:30,013 - document-it.test-workflow - INFO - Embedding statistics: [(2,)]
+2025-03-08 23:04:30,014 - document-it.test-workflow - INFO - Chunk statistics: [(62,)]
+2025-03-08 23:04:30,015 - document-it.test-workflow - INFO - Workflow test completed successfully
+2025-03-08 23:04:30,017 - document-it.test-workflow - INFO - Workflow test completed successfully
