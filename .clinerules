@@ -1,3 +1,4 @@
+
 ## 1. Package Management (UV Only)
 - **UV as Single Source:** Manage all Python dependencies with the **UV package manager**. Do not use `pip`, `pipenv`, `poetry`, or any other tool.
 - **No Pip:** Absolutely no `pip install` commands or `requirements.txt` changes. Documentation, CI scripts, and local dev environment must rely solely on UV.

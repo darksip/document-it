@@ -56,6 +56,8 @@ class Document(Base):
     last_processed = Column(DateTime, nullable=True)
     processing_required = Column(Boolean, default=True)
     doc_metadata = Column(JSONB, nullable=True)
+    # Add trace ID for observability
+    trace_id = Column(String(36), nullable=True, index=True)
     
     # Relationships
     content = relationship("DocumentContent", back_populates="document", uselist=False, cascade="all, delete-orphan")
@@ -75,6 +77,7 @@ class Document(Base):
     __table_args__ = (
         UniqueConstraint('url', name='uq_document_url'),
         Index('ix_document_content_hash', 'content_hash'),
+        Index('ix_document_trace_id', 'trace_id'),
     )
     
     def __repr__(self):
@@ -99,6 +102,8 @@ class DocumentContent(Base):
     content = Column(Text, nullable=True)
     parsed_content = Column(Text, nullable=True)
     structure_data = Column(JSONB, nullable=True)
+    # Add trace ID for observability
+    trace_id = Column(String(36), nullable=True, index=True)
     
     # Relationships
     document = relationship("Document", back_populates="content")
@@ -129,6 +134,8 @@ class DocumentEmbedding(Base):
     chunk_metadata = Column(JSONB, nullable=True)
     embedding_model = Column(String(100), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    # Add trace ID for observability
+    trace_id = Column(String(36), nullable=True, index=True)
     
     # Relationships
     document = relationship("Document", back_populates="embeddings")
@@ -136,6 +143,7 @@ class DocumentEmbedding(Base):
     # Indexes
     __table_args__ = (
         Index('ix_document_embedding_document_id', 'document_id'),
+        Index('ix_document_embedding_trace_id', 'trace_id'),
     )
     
     def __repr__(self):
@@ -162,6 +170,8 @@ class DocumentChunk(Base):
     chunk_index = Column(Integer, nullable=False)
     chunk_metadata = Column(JSONB, nullable=True)
     embedding = Column(Vector(3072), nullable=True)  # Default to OpenAI's text-embedding-3-large dimensions
+    # Add trace ID for observability
+    trace_id = Column(String(36), nullable=True, index=True)
     
     # Relationships
     document = relationship("Document", back_populates="chunks")
@@ -170,6 +180,7 @@ class DocumentChunk(Base):
     __table_args__ = (
         Index('ix_document_chunk_document_id', 'document_id'),
         Index('ix_document_chunk_index', 'document_id', 'chunk_index'),
+        Index('ix_document_chunk_trace_id', 'trace_id'),
     )
     
     def __repr__(self):
@@ -194,6 +205,8 @@ class DocumentAnalysis(Base):
     analysis_result = Column(JSONB, nullable=False)
     analysis_time = Column(DateTime, default=datetime.utcnow)
     model_version = Column(String(100), nullable=False)
+    # Add trace ID for observability
+    trace_id = Column(String(36), nullable=True, index=True)
     
     # Relationships
     document = relationship("Document", back_populates="analyses")
@@ -201,6 +214,7 @@ class DocumentAnalysis(Base):
     # Indexes
     __table_args__ = (
         Index('ix_document_analysis_document_id', 'document_id'),
+        Index('ix_document_analysis_trace_id', 'trace_id'),
     )
     
     def __repr__(self):
@@ -225,6 +239,8 @@ class DocumentRelationship(Base):
     target_document_id = Column(UUID(as_uuid=True), ForeignKey('document_it.documents.id'), nullable=False)
     relationship_type = Column(String(100), nullable=False)
     relationship_strength = Column(Float, nullable=True)
+    # Add trace ID for observability
+    trace_id = Column(String(36), nullable=True, index=True)
     
     # Relationships
     source_document = relationship("Document", foreign_keys=[source_document_id], back_populates="outgoing_relationships")
@@ -235,6 +251,7 @@ class DocumentRelationship(Base):
         Index('ix_document_relationship_source', 'source_document_id'),
         Index('ix_document_relationship_target', 'target_document_id'),
         Index('ix_document_relationship_type', 'relationship_type'),
+        Index('ix_document_relationship_trace_id', 'trace_id'),
     )
     
     def __repr__(self):
@@ -261,6 +278,8 @@ class CrawlSession(Base):
     status = Column(String(50), nullable=False, default="in_progress")
     config = Column(JSONB, nullable=True)
     documents_processed = Column(Integer, default=0)
+    # Add trace ID for observability
+    trace_id = Column(String(36), nullable=True, index=True)
     
     def __repr__(self):
         return f"<CrawlSession(id='{self.id}', status='{self.status}', documents_processed={self.documents_processed})>"

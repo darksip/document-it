@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+**Commit Summary**: Implemented enhanced observability with LangSmith integration and improved logging to diagnose document insertion issues. This provides comprehensive tracing and monitoring capabilities to identify why documents aren't being properly inserted into the database.
+
+### Added
+- New observability module with LangSmith integration:
+  - Created `document_it/observability/langsmith_client.py` for LLM operation tracing
+  - Implemented `document_it/observability/logging_setup.py` for enhanced structured logging
+  - Added trace IDs to all database models for correlation with LangSmith traces
+- Database enhancements for observability:
+  - Added trace ID fields to all database models
+  - Updated document change handler to track trace IDs
+  - Created database migration script for adding trace ID columns
+- Documentation:
+  - Added comprehensive `docs/langsmith_connection.md` guide
+  - Documented observability features and usage
+
+### Changed
+- Updated dependencies in pyproject.toml:
+  - Added langsmith for LLM tracing
+  - Added structlog for structured logging
+- Enhanced document change handler:
+  - Added trace ID parameter to all methods
+  - Improved logging with context information
+
+## [Unreleased]
+
 **Commit Summary**: Fixed document insertion in CLI tool to ensure all documents are properly stored in the database. This resolves the issue where JSON analysis files were created but documents weren't inserted into the database.
 
 ### Fixed

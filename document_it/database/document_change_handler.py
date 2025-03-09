@@ -8,6 +8,7 @@ content hashing and determining if processing is required.
 import hashlib
 import logging
 from typing import Dict, List, Any, Optional, Tuple, Union
+import uuid
 from datetime import datetime
 
 from sqlalchemy.orm import Session
@@ -73,6 +74,10 @@ class DocumentChangeHandler:
         """
         # Calculate content hash
         content_hash = self.calculate_content_hash(content)
+
+        # Generate trace ID if not provided
+        if not trace_id:
+            trace_id = str(uuid.uuid4())
         
         # Check if document exists
         existing_document = self.document_repo.get_by_url(session, url)
@@ -97,6 +102,7 @@ class DocumentChangeHandler:
         local_path: str,
         content: str,
         metadata: Optional[Dict[str, Any]] = None,
+        trace_id: Optional[str] = None,
         force_processing: bool = False
     ) -> Document:
         """
@@ -108,6 +114,7 @@ class DocumentChangeHandler:
             local_path: Path to the local copy of the document
             content: The document content
             metadata: Additional metadata about the document
+            trace_id: Trace ID for observability
             force_processing: Whether to force processing regardless of content hash
             
         Returns:
@@ -131,7 +138,8 @@ class DocumentChangeHandler:
                 content_hash=content_hash,
                 last_crawled=datetime.utcnow(),
                 processing_required=has_changed or force_processing,
-                doc_metadata=metadata or existing_document.doc_metadata
+                doc_metadata=metadata or existing_document.doc_metadata,
+                trace_id=trace_id
             )
             
             # Update document content
@@ -141,13 +149,15 @@ class DocumentChangeHandler:
                     self.content_repo.update(
                         session,
                         document_content.id,
-                        content=content
+                        content=content,
+                        trace_id=trace_id
                     )
                 else:
                     self.content_repo.create(
                         session,
                         document_id=existing_document.id,
-                        content=content
+                        content=content,
+                        trace_id=trace_id
                     )
             
             logger.info(f"Updated document {url} (hash: {content_hash}, changed: {has_changed})")
@@ -162,14 +172,16 @@ class DocumentChangeHandler:
                 content_hash=content_hash,
                 last_crawled=datetime.utcnow(),
                 processing_required=True,
-                doc_metadata=metadata
+                doc_metadata=metadata,
+                trace_id=trace_id
             )
             
             # Create document content
             self.content_repo.create(
                 session,
                 document_id=new_document.id,
-                content=content
+                content=content,
+                trace_id=trace_id
             )
             
             logger.info(f"Created document {url} (hash: {content_hash})")
@@ -178,7 +190,8 @@ class DocumentChangeHandler:
     def mark_document_processed(
         self,
         session: Session,
-        document_id: str
+        document_id: str,
+        trace_id: Optional[str] = None
     ) -> Optional[Document]:
         """
         Mark a document as processed.
@@ -186,6 +199,7 @@ class DocumentChangeHandler:
         Args:
             session: The database session
             document_id: The document ID
+            trace_id: Trace ID for observability
             
         Returns:
             The updated document if found, None otherwise
@@ -196,7 +210,8 @@ class DocumentChangeHandler:
                 session,
                 document_id,
                 last_processed=datetime.utcnow(),
-                processing_required=False
+                processing_required=False,
+                trace_id=trace_id or document.trace_id
             )
             logger.info(f"Marked document {document.url} as processed")
             return document
