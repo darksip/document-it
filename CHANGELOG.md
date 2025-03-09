@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+**Commit Summary**: Fixed document insertion in CLI tool to ensure all documents are properly stored in the database. This resolves the issue where JSON analysis files were created but documents weren't inserted into the database.
+
+### Fixed
+- Document insertion in CLI tool:
+  - Added database integration to the main CLI workflow
+  - Created a dedicated database integration module for document analysis
+  - Ensured all documents are properly inserted into the database
+  - Added verification script to validate database insertion
+
+### Added
+- New `AnalysisDatabaseIntegrator` class in `document_it/analysis/db_integration.py`:
+  - Centralized database operations for document analysis
+  - Methods for document insertion and marking as processed
+- Enhanced `DocumentRepository` with additional query methods:
+  - Added `get_recent_documents` method to find recently updated documents
+  - Added `get_documents_by_url_pattern` method for URL pattern matching
+- New verification script `verify_cli_document_insertion.py`:
+  - Validates that documents are properly inserted into the database
+  - Provides detailed information about stored documents
+
+## [Unreleased]
+
+**Commit Summary**: Fixed document insertion in Streamlit application to ensure all document types are properly stored in the database. This resolves the issue where only llms.txt documents were being inserted correctly, making the Streamlit interface fully usable for document processing.
+
+### Fixed
+- Document insertion in Streamlit application's Queue Monitor page:
+  - Replaced direct document creation with DocumentChangeHandler for proper document insertion
+  - Added proper content hash calculation for document change detection
+  - Ensured document content is stored in the DocumentContent table
+  - Set appropriate processing flags for document analysis
+  - Added robust error handling for database operations
+  - Improved file encoding handling for different document types
+
+### Added
+- Test script `test_streamlit_document_insertion.py` to verify document insertion functionality
+
+## [Unreleased]
+
 **Commit Summary**: Added database administration tool with command-line interface for database management tasks. This tool provides utilities for resetting, checking, and maintaining the database, making it easier to manage the database during development and testing.
 
 ### Added

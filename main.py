@@ -14,6 +14,8 @@ from urllib.parse import urlparse
 from document_it.analysis import (analyze_document_with_workflow, synthesize_topics,
                                  analyze_documents_batch_async, synthesize_topics_async)
 from document_it.analysis.parallel_manager import ParallelManager, ParallelismMode
+from document_it.database.manager import DatabaseManager
+from document_it.analysis.db_integration import AnalysisDatabaseIntegrator
 from document_it.core import process_documents_with_queue
 from document_it.parser import extract_urls_from_markdown, categorize_documents
 from document_it.reporting import generate_guidelines_from_analyses
@@ -109,6 +111,11 @@ def setup_arg_parser():
         action="store_true",
         help="Enable job queue for processing (useful for large document sets)"
     )
+    parser.add_argument(
+        "--disable-db",
+        action="store_true",
+        help="Disable database integration (documents won't be stored in the database)"
+    )
     # Add Streamlit interface options
     parser.add_argument(
         "--streamlit",
@@ -166,6 +173,14 @@ def main():
     output_dir.mkdir(parents=True, exist_ok=True)
     
     logger.info("Starting Document-it")
+    
+    # Initialize database components unless disabled
+    use_database = not args.disable_db
+    if use_database:
+        logger.info("Initializing database integration")
+        db_manager = DatabaseManager()
+        db_integrator = AnalysisDatabaseIntegrator(db_manager)
+    
     logger.info(f"Using URL: {args.url}")
     logger.info(f"Output directory: {output_dir.absolute()}")
     
@@ -344,6 +359,17 @@ def main():
         limited_refs = document_refs[:max_docs]
         logger.info(f"Limiting download to {max_docs} documents for testing")
         
+        # Insert the main document (llms.txt) into the database
+        if use_database:
+            try:
+                logger.info("Inserting main document (llms.txt) into database")
+                with open(raw_dir / "llms.txt", "r") as f:
+                    content = f.read()
+                db_integrator.insert_document(args.url, str(raw_dir / "llms.txt"), content)
+                logger.info("Main document inserted into database")
+            except Exception as e:
+                logger.warning(f"Failed to insert main document into database: {str(e)}")
+        
         # Process the batch of documents
         batch_result = process_document_batch(
             limited_refs,
@@ -355,6 +381,22 @@ def main():
         index_path = create_document_index(batch_result['document_paths'])
         logger.info(f"Created document index at {index_path}")
         logger.info(f"Successfully downloaded {batch_result['success_count']} documents, {len(batch_result['failed_urls'])} failed")
+        
+        # Insert downloaded documents into the database
+        if use_database:
+            logger.info("Inserting downloaded documents into database")
+            for url, path in batch_result['document_paths'].items():
+                try:
+                    # Read document content
+                    try:
+                        with open(path, "r", encoding="utf-8") as f:
+                            content = f.read()
+                    except UnicodeDecodeError:
+                        with open(path, "r", encoding="latin-1") as f:
+                            content = f.read()
+                    db_integrator.insert_document(url, path, content)
+                except Exception as e:
+                    logger.warning(f"Failed to insert document {url} into database: {str(e)}")
 
         # 4. Analyze documents with LangGraph
         logger.info("Analyzing documents with LangGraph...")
@@ -381,11 +423,20 @@ def main():
         else:
             # Use the parallel manager for processing
             parallel_manager = ParallelManager(
-                mode=args.parallelism_mode,
-                max_workers=args.analysis_workers,
+                mode=args.parallelism_mode, 
+                max_workers=args.analysis_workers, 
                 batch_size=args.batch_size
             )
             analyses = parallel_manager.process_documents(document_items, str(output_dir))
+        
+        # Mark documents as processed in the database
+        if use_database:
+            logger.info("Marking analyzed documents as processed in database")
+            for document_url, document_path in document_items:
+                try:
+                    db_integrator.mark_document_processed(document_url)
+                except Exception as e:
+                    logger.warning(f"Failed to mark document {document_url} as processed: {str(e)}")
         
         logger.info(f"Successfully analyzed {len(analyses)} documents")
 

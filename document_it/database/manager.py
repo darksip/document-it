@@ -6,7 +6,7 @@ This module provides a database manager for interacting with the PostgreSQL data
 
 import logging
 import os
-from typing import Dict, List, Any, Optional, Type, TypeVar, Generic, Union
+from typing import Dict, List, Any, Optional, Type, TypeVar, Generic, Union, Tuple
 from urllib.parse import urlparse
 
 from sqlalchemy import create_engine, text
@@ -14,6 +14,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker, Session, scoped_session
 from sqlalchemy.pool import QueuePool
 from sqlalchemy.exc import SQLAlchemyError
+from datetime import datetime
 
 from document_it.database.models import Base, Document, DocumentContent, DocumentEmbedding, DocumentChunk, DocumentAnalysis, DocumentRelationship, CrawlSession
 
@@ -296,6 +297,37 @@ class DocumentRepository(Repository[Document]):
         if limit:
             query = query.limit(limit)
         return query.all()
+    
+    def get_recent_documents(
+        self,
+        session: Session,
+        since_time: datetime
+    ) -> List[Document]:
+        """
+        Get documents created or updated since a specific time.
+        
+        Args:
+            session: The database session
+            since_time: The time threshold
+            
+        Returns:
+            List of documents
+        """
+        return session.query(self.model_class).filter(
+            (self.model_class.last_crawled >= since_time) | 
+            (self.model_class.last_processed >= since_time)
+        ).all()
+    
+    def get_documents_by_url_pattern(
+        self,
+        session: Session,
+        url_pattern: str
+    ) -> List[Document]:
+        """
+        Get documents with URLs matching a pattern.
+        """
+        return session.query(self.model_class).filter(
+            self.model_class.url.like(url_pattern)).all()
 
 
 class DocumentContentRepository(Repository[DocumentContent]):

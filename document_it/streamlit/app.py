@@ -28,6 +28,10 @@ st.set_page_config(
 if "settings" not in st.session_state:
     st.session_state.settings = load_settings()
 
+# Initialize auto_refresh state to prevent errors in the update callback
+if "auto_refresh" not in st.session_state:
+    st.session_state.auto_refresh = True
+
 # Main page content
 st.title("📚 Document-it Dashboard")
 st.markdown("""

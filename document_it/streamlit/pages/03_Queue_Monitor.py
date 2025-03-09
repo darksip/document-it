@@ -20,12 +20,19 @@ from document_it.streamlit.utils.queue_adapter import queue_adapter
 from document_it.streamlit.components.settings_manager import get_setting
 from document_it.core.job_queue import Worker, WorkerPool
 from document_it.database.manager import DatabaseManager, DocumentRepository
+from document_it.database.document_change_handler import DocumentChangeHandler
+from document_it.database.crawler import Crawler
 from document_it.web.connector import download_file
+from document_it.parser import extract_urls_from_markdown
+from document_it.streamlit.utils.document_processor import document_processor
 
 # Initialize session state
 if "selected_job_id" not in st.session_state:
     st.session_state.selected_job_id = None
 
+# Initialize auto_refresh state to prevent errors in the update callback
+if "auto_refresh" not in st.session_state:
+    st.session_state.auto_refresh = True
 if "auto_refresh" not in st.session_state:
     st.session_state.auto_refresh = True
 
@@ -137,12 +144,9 @@ if status["pending"] > 0:
             try:
                 # Import the necessary modules
                 from document_it.analysis.langgraph_agent_async import analyze_document_with_workflow_async
-
-                # Initialize the database manager
-                db_manager = DatabaseManager()
-                document_repo = DocumentRepository(db_manager)
                 
                 # Define a simple process function for demonstration
+                # This function processes documents and inserts them into the database
                 async def process_document(input_data):                    
                     try:
                         # Handle different input data formats
@@ -160,61 +164,30 @@ if status["pending"] > 0:
                         if not document_path and document_url:
                             # If document_path is empty but URL is provided, use the URL
                             try:
-                                # Create a temporary directory for downloaded files
-                                os.makedirs('data/temp', exist_ok=True)
+                                # Process the document using our utility
+                                success, message, processed_docs = document_processor.process_document(
+                                    document_url=document_url,
+                                    extract_references=True,
+                                    max_references=5,
+                                    force_processing=True
+                                )
                                 
-                                # Download the file
-                                temp_path = os.path.join('data/temp', f"temp_{int(time.time())}.html")
-                                download_file(document_url, temp_path)
-                                
-                                # Read the content of the downloaded file
-                                with open(temp_path, 'r', encoding='utf-8') as f:
-                                    content = f.read()
-                                
-                                # Create a session
-                                session = db_manager.get_session()
-                                
-                                # Add the document to the database
-                                document = document_repo.create(session, url=document_url, content_hash="", processing_required=False)
-                                session.commit()
-                                
-                                st.success(f"Document added to database with ID: {document.id}")
-                                
-                                # Use the downloaded file path
-                                document_path = temp_path
+                                if success:
+                                    st.success(message)
+                                    # Use the first document's path for analysis
+                                    document_path = processed_docs[0]["path"]
+                                else:
+                                    st.error(message)
+                                    return {"error": message}
                             except Exception as e:
                                 return {"error": f"Failed to download document: {str(e)}"}
                         elif not document_path and not document_url:
                             # Both document_path and document_url are empty
                             return {"error": "Both document path and URL are empty"}
-                        elif document_path.startswith('http'):
-                            # If document_path is a URL, download it first
-                            try:
-                                # Create a temporary directory for downloaded files
-                                os.makedirs('data/temp', exist_ok=True)
-                                
-                                # Download the file
-                                temp_path = os.path.join('data/temp', f"temp_{int(time.time())}.html")
-                                download_file(document_path, temp_path)
-
-                                # Read the content of the downloaded file
-                                with open(temp_path, 'r', encoding='utf-8') as f:
-                                    content = f.read()
-                                
-                                # Create a session
-                                session = db_manager.get_session()
-                                
-                                # Add the document to the database
-                                document = document_repo.create(session, url=document_path, content_hash="", processing_required=False)
-                                session.commit()
-                                
-                                # Use the downloaded file path
-                                document_path = temp_path
-                            except Exception as e:
-                                return {"error": f"Failed to download document: {str(e)}"}
                         
                         st.info(f"Processing document: {document_path} from {document_url}")
                         result = await analyze_document_with_workflow_async(document_path, document_url)
+                        
                         return result
                     except Exception as e:
                         return {"error": f"Error processing document: {str(e)}"}

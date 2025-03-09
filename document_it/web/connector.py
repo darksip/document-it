@@ -202,3 +202,55 @@ def get_extension_for_content_type(content_type: str) -> str:
     }
     
     return content_type_map.get(content_type, ".txt")
+
+
+class WebConnector:
+    """
+    Web connector class for Document-it.
+    
+    This class provides methods for connecting to websites and downloading content.
+    It wraps the module-level functions to provide a consistent interface.
+    
+    Attributes:
+        session: The requests session
+    """
+    
+    def __init__(self, timeout: int = 30):
+        """
+        Initialize the web connector.
+        
+        Args:
+            timeout: Connection timeout in seconds
+        """
+        self.session = requests.Session()
+        self.session.headers.update({
+            "User-Agent": "Document-it/0.1.0 (https://github.com/user/document-it)"
+        })
+        self.timeout = timeout
+    
+    def connect_to_website(self, url: str) -> requests.Session:
+        """
+        Establish a connection to the specified URL.
+        
+        Args:
+            url: The URL to connect to
+            
+        Returns:
+            A session object that can be used for subsequent requests
+        """
+        return connect_to_website(url, timeout=self.timeout)
+    
+    def download_content(self, url: str) -> str:
+        """
+        Download content from the specified URL.
+        
+        Args:
+            url: The URL to download
+            
+        Returns:
+            The content as a string
+        """
+        _, content = download_file(url, session=self.session, timeout=self.timeout)
+        if isinstance(content, bytes):
+            return content.decode('utf-8', errors='ignore')
+        return content
